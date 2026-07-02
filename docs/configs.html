@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Config Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .nav a {
+        display: inline-block;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        text-decoration: none;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="commands.html">Commands</a>
+          <a href="data.html">Data</a>
+          <a href="configs.html">Configs</a>
+          <a href="api.html">API</a>
+          <a href="notebooks.html">Notebooks</a>
+          <a href="workflow.html">Workflow</a>
+          <a href="figures.html">Figures</a>
+          <a href="research.html">Guardrails</a>
+          <a href="reproducibility.html">Reproducibility</a>
+        </nav>
+        <h1>Config guide</h1>
+        <p>
+          The repository uses small YAML files to separate experiment settings
+          from code. The main split is between synthetic and empirical runs,
+          with separate output directories and optional figure-specific settings.
+        </p>
+
+        <h2>Config files in the repository</h2>
+        <ul>
+          <li><code>configs/default.yaml</code>: baseline project, analysis, plot, and output defaults</li>
+          <li><code>configs/synthetic.yaml</code>: synthetic experiment example</li>
+          <li><code>configs/empirical.yaml</code>: empirical experiment example</li>
+          <li><code>configs/figures.yaml</code>: article-figure configuration surface</li>
+          <li><code>configs/experiment.yaml</code>: earlier repository experiment stub retained for compatibility</li>
+        </ul>
+
+        <h2>Common structure</h2>
+        <pre><code>experiment:
+  name: synthetic_logistic_vs_ar1
+  mode: synthetic
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+
+outputs:
+  directory: outputs/synthetic_logistic_vs_ar1</code></pre>
+
+        <h2>Synthetic config sections</h2>
+        <ul>
+          <li><code>experiment.name</code>: run label saved into the output summary</li>
+          <li><code>experiment.mode</code>: should be <code>synthetic</code></li>
+          <li><code>synthetic.systems</code>: list of benchmark systems such as logistic, AR(1), or GARCH</li>
+          <li><code>analysis.threshold_quantile</code>: event threshold definition</li>
+          <li><code>analysis.run_length</code>: declustering gap for the runs estimator</li>
+          <li><code>outputs.directory</code>: output folder for tables, figures, and JSON summary</li>
+        </ul>
+
+        <h2>Empirical config sections</h2>
+        <ul>
+          <li><code>experiment.mode</code>: should be <code>empirical</code></li>
+          <li><code>empirical.input_path</code>: local canonical CSV in long format</li>
+          <li><code>analysis.*</code>: threshold and recurrence settings shared with synthetic runs</li>
+          <li><code>outputs.directory</code>: empirical run output folder</li>
+        </ul>
+
+        <h2>Figure and project defaults</h2>
+        <ul>
+          <li><code>project.seed</code>: reproducibility seed for configurable workflows</li>
+          <li><code>project.output_dir</code>: fallback output directory</li>
+          <li><code>plots.dpi</code>: figure resolution setting</li>
+          <li><code>plots.save_format</code>: default saved figure extension</li>
+        </ul>
+
+        <h2>Useful commands</h2>
+        <pre><code>python -m dynsys_econometrics synthetic --config configs/synthetic.yaml
+python -m dynsys_econometrics empirical --config configs/empirical.yaml
+python scripts/run_experiment.py --config configs/synthetic.yaml</code></pre>
+
+        <h2>Interpretation rule</h2>
+        <p>
+          Config files make workflows reproducible, but they do not turn
+          synthetic data into empirical evidence. Always distinguish the
+          configured run mode from the claims you make about the outputs.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
