@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Method Notes | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li,
+      td,
+      th {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .nav a {
+        display: inline-block;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        text-decoration: none;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 16px;
+      }
+
+      th,
+      td {
+        border: 1px solid var(--line);
+        padding: 10px 12px;
+        text-align: left;
+        vertical-align: top;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="commands.html">Commands</a>
+          <a href="data.html">Data</a>
+          <a href="configs.html">Configs</a>
+          <a href="methods.html">Methods</a>
+          <a href="troubleshooting.html">Troubleshooting</a>
+          <a href="api.html">API</a>
+          <a href="notebooks.html">Notebooks</a>
+          <a href="workflow.html">Workflow</a>
+          <a href="figures.html">Figures</a>
+          <a href="research.html">Guardrails</a>
+          <a href="reproducibility.html">Reproducibility</a>
+        </nav>
+        <h1>Method notes</h1>
+        <p>
+          The repository is motivated by rare-event ideas from the statistical
+          study of dynamical systems, but it applies those ideas to observed
+          macro-financial time series as descriptive diagnostics rather than as
+          proof that economies are literal deterministic maps.
+        </p>
+
+        <h2>Conceptual translation</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Dynamical-systems concept</th>
+              <th>Econometric analogue</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr><td>State space</td><td>Latent macro-financial state of the economy</td></tr>
+            <tr><td>Orbit</td><td>Observed time path of the economy</td></tr>
+            <tr><td>Observable</td><td>Inflation, unemployment, spreads, returns, volatility, output</td></tr>
+            <tr><td>Rare set</td><td>Crisis region or stress threshold</td></tr>
+            <tr><td>Hitting time</td><td>Time until the system enters a crisis region</td></tr>
+            <tr><td>Return time</td><td>Time between visits to comparable stress states</td></tr>
+            <tr><td>Extremal index</td><td>Degree of clustering in extreme events</td></tr>
+            <tr><td>Compound Poisson limit intuition</td><td>Crises may arrive in bursts rather than as isolated shocks</td></tr>
+            <tr><td>Multivariate extremes</td><td>Joint stress across several economic variables</td></tr>
+          </tbody>
+        </table>
+
+        <h2>Why this matters</h2>
+        <p>
+          Standard econometric tools describe dependence through autocorrelation,
+          conditional heteroskedasticity, and regime-like behavior. The
+          rare-event layer adds a different question: whether threshold
+          exceedances arrive independently or in clusters, and how quickly the
+          system returns to dangerous regions after leaving them.
+        </p>
+
+        <h2>Repository workflow in method terms</h2>
+        <ul>
+          <li>Construct benchmark systems with different recurrence structures.</li>
+          <li>Define stress regions using thresholds or transformed observables.</li>
+          <li>Measure exceedances, clustering, and recurrence.</li>
+          <li>Extend the same logic to joint stress across several variables.</li>
+          <li>Compare the descriptive outputs with baseline econometric summaries.</li>
+        </ul>
+
+        <h2>Caution</h2>
+        <p>
+          The interesting claim is not that the economy is a simple chaotic map.
+          The interesting claim is that observed economic series can exhibit
+          recurrence, clustering, and joint-tail structure that are naturally
+          described using tools developed in the dynamical-systems rare-event
+          literature.
+        </p>
+
+        <h2>Repository reference</h2>
+        <p>
+          The source markdown version of these notes is available in
+          <a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/methodological_notes.md">docs/methodological_notes.md</a>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>

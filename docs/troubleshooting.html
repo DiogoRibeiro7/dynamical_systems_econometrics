@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Troubleshooting | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .nav a {
+        display: inline-block;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        text-decoration: none;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="commands.html">Commands</a>
+          <a href="data.html">Data</a>
+          <a href="configs.html">Configs</a>
+          <a href="methods.html">Methods</a>
+          <a href="troubleshooting.html">Troubleshooting</a>
+          <a href="api.html">API</a>
+          <a href="notebooks.html">Notebooks</a>
+          <a href="workflow.html">Workflow</a>
+          <a href="figures.html">Figures</a>
+          <a href="research.html">Guardrails</a>
+          <a href="reproducibility.html">Reproducibility</a>
+        </nav>
+        <h1>Troubleshooting</h1>
+        <p>
+          This page collects the most common operational and interpretation
+          problems in the repository, together with the expected fix or next
+          diagnostic step.
+        </p>
+
+        <h2>Missing empirical input file</h2>
+        <p>
+          Symptom: the empirical experiment or a notebook cannot find the
+          configured CSV path.
+        </p>
+        <ul>
+          <li>Check <code>empirical.input_path</code> in the YAML config.</li>
+          <li>Confirm the file is a local canonical long-format CSV.</li>
+          <li>Use the synthetic workflow first if you only want a smoke test.</li>
+        </ul>
+
+        <h2>Catalog validation fails</h2>
+        <p>
+          Symptom: <code>validate-catalog</code> reports missing fields or an
+          invalid root structure.
+        </p>
+        <ul>
+          <li>Ensure the YAML root is a mapping.</li>
+          <li>Ensure <code>series</code> is a list.</li>
+          <li>Each series entry should at least include <code>series_id</code>, <code>description</code>, and <code>source</code>.</li>
+        </ul>
+
+        <h2>Schema mismatch in local CSV files</h2>
+        <p>
+          Symptom: loader functions reject columns or fail datetime/numeric parsing.
+        </p>
+        <ul>
+          <li>Normalize inputs to <code>date, series_id, value</code> before downstream analysis.</li>
+          <li>Inspect decimal separators, missing-value markers, and date formatting.</li>
+          <li>Use the data guide page to confirm the expected canonical schema.</li>
+        </ul>
+
+        <h2>Threshold instability</h2>
+        <p>
+          Symptom: extremal-index or recurrence conclusions change materially
+          under small threshold changes.
+        </p>
+        <ul>
+          <li>Run threshold sensitivity explicitly before writing strong conclusions.</li>
+          <li>Treat short empirical samples as especially fragile.</li>
+          <li>Reframe the result as exploratory if stability is weak.</li>
+        </ul>
+
+        <h2>No exceedances or too few return times</h2>
+        <p>
+          Symptom: return-time tables are empty or event counts are too small to interpret.
+        </p>
+        <ul>
+          <li>Check whether the threshold is too high for the available sample.</li>
+          <li>Increase sample length in synthetic work if the goal is method validation.</li>
+          <li>Do not force interpretation from near-empty event tables.</li>
+        </ul>
+
+        <h2>Optional dependency problems</h2>
+        <p>
+          Symptom: a loader or workflow complains about a package such as
+          <code>yfinance</code>.
+        </p>
+        <ul>
+          <li>The base repository should still work without optional online-source dependencies.</li>
+          <li>Install the missing package only if that specific source is needed.</li>
+          <li>Prefer local CSV inputs when reproducibility matters more than live fetching.</li>
+        </ul>
+
+        <h2>Figure/script outputs differ from notebook outputs</h2>
+        <p>
+          Symptom: a notebook and a script produce different-looking outputs.
+        </p>
+        <ul>
+          <li>Treat script-generated outputs as the publication path.</li>
+          <li>Use notebooks as exploratory and explanatory layers.</li>
+          <li>Check whether a notebook is using fallback synthetic data while the script is using a local raw file.</li>
+        </ul>
+
+        <h2>Interpretation problem rather than code problem</h2>
+        <p>
+          Symptom: the code runs, but the claim you want to write sounds too
+          strong.
+        </p>
+        <ul>
+          <li>Check the research guardrails page.</li>
+          <li>Check whether the claim is descriptive or causal.</li>
+          <li>Check whether the result comes from real empirical data or a synthetic fallback.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
