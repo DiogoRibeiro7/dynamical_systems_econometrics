@@ -41,7 +41,7 @@ def _build_macro_stress_series(repo_root: Path) -> pd.Series:
         series.name = "macro_stress"
         return series
 
-    dates = pd.date_range("2000-01-01", periods=260, freq="M")
+    dates = pd.date_range("2000-01-01", periods=260, freq="ME")
     rng = np.random.default_rng(17)
     values = (
         np.cumsum(rng.normal(size=dates.size)) * 0.15

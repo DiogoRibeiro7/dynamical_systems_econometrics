@@ -6,16 +6,12 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
 BoolArray = NDArray[np.bool_]
 IntArray = NDArray[np.int64]
-
-try:
-    import pandas as pd  # type: ignore
-except Exception:  # pragma: no cover
-    pd = None  # type: ignore
 
 
 @dataclass(frozen=True)
@@ -68,7 +64,7 @@ class ThresholdSensitivityResult:
 
 def _coerce_numeric_series(values: Sequence[float] | FloatArray) -> FloatArray:
     """Validate and convert input to a finite 1-D float64 NumPy array."""
-    if pd is not None and isinstance(values, pd.Series):
+    if isinstance(values, pd.Series):
         arr = values.to_numpy(dtype=np.float64)
     elif isinstance(values, np.ndarray):
         arr = np.asarray(values, dtype=np.float64)
@@ -162,7 +158,7 @@ def block_maxima(
             raise ValueError("not enough observations for a complete block.")
         usable = values_arr[: n_complete * block_size]
         reshaped = usable.reshape(n_complete, block_size)
-        return np.max(reshaped, axis=1)
+        return np.asarray(np.max(reshaped, axis=1), dtype=np.float64)
 
     output = []
     start = 0

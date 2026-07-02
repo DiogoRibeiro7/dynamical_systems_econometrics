@@ -31,15 +31,15 @@ def test_return_time_distribution_shapes() -> None:
     values = np.array([0.0, 1.2, 0.2, 2.1, 0.1, 3.0, 0.0, 4.2], dtype=float)
     distribution = return_time_distribution(values, threshold=1.0)
     assert isinstance(distribution, ReturnTimeDistribution)
-    assert distribution.return_times.tolist() == [1, 2, 2]
-    assert distribution.unique_times.tolist() == [1, 2]
+    assert distribution.return_times.tolist() == [2, 2, 2]
+    assert distribution.unique_times.tolist() == [2]
     assert np.isclose(distribution.probabilities.sum(), 1.0)
 
 
 def test_empirical_survival_curve() -> None:
     unique, survival = empirical_survival_curve([1, 2, 2, 3, 3, 3])
     assert unique.tolist() == [1, 2, 3]
-    assert np.allclose(survival, [1.0, 2.0 / 3.0, 1.0 / 2.0])
+    assert np.allclose(survival, [1.0, 5.0 / 6.0, 1.0 / 2.0])
 
 
 def test_empirical_survival_curve_empty() -> None:

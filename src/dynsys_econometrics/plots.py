@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import matplotlib.dates as mdates
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -11,6 +12,11 @@ from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
 IntArray = NDArray[np.int64]
+
+
+def _series_label(series: pd.Series) -> str:
+    """Return a printable label for a Series."""
+    return str(series.name) if series.name is not None else "value"
 
 
 def _ensure_parent_dir(output_path: str | Path) -> Path:
@@ -55,7 +61,7 @@ def plot_series_with_threshold(series: pd.Series, threshold: float, output_path:
     ax.axhline(threshold, linestyle="--", linewidth=1)
     ax.set_title("Rare-event threshold")
     ax.set_xlabel("date")
-    ax.set_ylabel(validated.name or "value")
+    ax.set_ylabel(_series_label(validated))
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
@@ -103,7 +109,7 @@ def plot_threshold_exceedances(
     ax.axhline(threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
     ax.set_title(title)
     ax.set_xlabel("date" if isinstance(validated.index, pd.DatetimeIndex) else "time")
-    ax.set_ylabel(validated.name or "value")
+    ax.set_ylabel(_series_label(validated))
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
@@ -131,7 +137,7 @@ def plot_clustered_vs_isolated_extremes(
         ax.scatter(series.index[exceedances], series[exceedances], color="#e45756", s=16)
         ax.axhline(threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
         ax.set_title(title)
-        ax.set_ylabel(series.name or "value")
+        ax.set_ylabel(_series_label(series))
 
     axes[1].set_xlabel("time")
     fig.tight_layout()
@@ -199,12 +205,14 @@ def plot_macro_financial_timeline(
     validated.plot(ax=ax, color="#4c78a8", linewidth=1.0)
     ax.axhline(threshold, linestyle="--", linewidth=1.0, color="#e45756")
     for start, end, label in crisis_windows:
-        ax.axvspan(start, end, color="#f2cf5b", alpha=0.25)
-        ax.text(start, float(validated.max()), label, fontsize=8, va="top")
+        start_num = float(mdates.date2num(start.to_pydatetime()))  # type: ignore[no-untyped-call]
+        end_num = float(mdates.date2num(end.to_pydatetime()))  # type: ignore[no-untyped-call]
+        ax.axvspan(start_num, end_num, color="#f2cf5b", alpha=0.25)
+        ax.text(start_num, float(validated.max()), label, fontsize=8, va="top")
     ax.set_title("Macro-financial crisis timeline")
     ax.set_xlabel("date")
-    ax.set_ylabel(validated.name or "value")
-    fig.tight_layout()
+    ax.set_ylabel(_series_label(validated))
+    fig.subplots_adjust(left=0.10, right=0.95, bottom=0.15, top=0.90)
     fig.savefig(path, dpi=160)
     plt.close(fig)
 
@@ -234,6 +242,6 @@ def plot_multivariate_stress_heatmap(
     ax.set_yticks(range(frame.shape[1]))
     ax.set_yticklabels(frame.columns.tolist())
     fig.colorbar(image, ax=ax, label="stress level")
-    fig.tight_layout()
+    fig.subplots_adjust(left=0.12, right=0.92, bottom=0.12, top=0.90)
     fig.savefig(path, dpi=160)
     plt.close(fig)

@@ -44,7 +44,7 @@ def _coerce_numeric_series(values: Sequence[float] | FloatArray) -> FloatArray:
         arr = np.asarray(values, dtype=np.float64)
     else:
         try:
-            import pandas as pd  # type: ignore
+            import pandas as pd
 
             if isinstance(values, pd.Series):
                 arr = values.to_numpy(dtype=np.float64)

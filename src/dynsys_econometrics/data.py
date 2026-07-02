@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Iterable, Sequence
+from typing import Any, Iterable, Sequence, cast
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
 import pandas as pd
 from pandas import DataFrame
+from pandas.errors import ParserError
 
 
 _SUPPORTED_YEAR_COLUMNS = tuple(str(year) for year in range(1900, 2201))
@@ -26,8 +27,11 @@ def _to_standard_schema(
     series_id_series: pd.Series | None,
 ) -> DataFrame:
     """Create the standard repository schema from aligned date/value(/id) columns."""
-    date = pd.to_datetime(date_series, errors="raise")
-    value = pd.to_numeric(value_series, errors="raise")
+    try:
+        date = pd.to_datetime(date_series, errors="raise")
+        value = pd.to_numeric(value_series, errors="raise")
+    except (TypeError, ValueError, ParserError) as exc:
+        raise DataLoadFailure("Date or value column could not be parsed into the standard schema.") from exc
     if date.isna().any():
         raise DataLoadFailure("Date column has missing or unparsable values.")
     if value.isna().any():
@@ -46,14 +50,14 @@ def _to_standard_schema(
             "value": value,
         }
     )
-    return standardized.sort_values(["series_id", "date"]).reset_index(drop=True)
+    return cast(DataFrame, standardized.sort_values(["series_id", "date"]).reset_index(drop=True))
 
 
-def _load_csv_to_frame(path: str | Path, **read_kwargs) -> DataFrame:
+def _load_csv_to_frame(path: str | Path, **read_kwargs: Any) -> DataFrame:
     csv_path = Path(path)
     if not csv_path.exists():
         raise FileNotFoundError(f"CSV file not found: {csv_path}")
-    frame = pd.read_csv(csv_path, **read_kwargs)
+    frame = cast(DataFrame, pd.read_csv(csv_path, **read_kwargs))
     if frame.empty:
         raise DataLoadFailure("CSV file has no rows.")
     return frame
@@ -266,6 +270,7 @@ def load_world_bank_csv(
             )
         raise DataLoadFailure("No year columns found for World Bank wide format.")
 
+    inferred_series: str | None
     if series_id is not None:
         inferred_series = str(series_id)
     else:
@@ -332,7 +337,7 @@ def load_yfinance_series(
     Raises a descriptive error when yfinance is unavailable.
     """
     try:
-        import yfinance  # type: ignore
+        import yfinance
     except ModuleNotFoundError as exc:
         raise DataLoadFailure(
             "yfinance is optional; install it with `pip install yfinance`."
@@ -382,4 +387,5 @@ def load_yfinance_series(
             )
         )
 
-    return pd.concat(outputs, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True)
+    combined = pd.concat(outputs, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True)
+    return cast(DataFrame, combined)
