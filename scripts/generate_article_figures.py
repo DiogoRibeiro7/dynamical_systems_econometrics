@@ -76,6 +76,13 @@ def main() -> None:
 
     orbit = logistic_map(n_steps=5000, x0=0.17, r=4.0)
     observable = -np.log(np.abs(orbit - 0.5) + 1e-12)
+    pd.DataFrame(
+        {
+            "step": np.arange(800, dtype=int),
+            "orbit": orbit[:800],
+            "observable": observable[:800],
+        }
+    ).to_csv(output_dir / "simulated_orbit_and_observable_source.csv", index=False)
     plot_orbit_and_observable(
         orbit=orbit[:800],
         observable=observable[:800],
@@ -85,6 +92,14 @@ def main() -> None:
     clustered_values = np.abs(simulate_garch11(n_steps=3000, seed=11))
     clustered_series = pd.Series(clustered_values, name="clustered_stress")
     clustered_threshold = float(np.quantile(clustered_values, 0.97))
+    pd.DataFrame(
+        {
+            "step": np.arange(600, dtype=int),
+            "value": clustered_series.iloc[:600].to_numpy(),
+            "threshold": clustered_threshold,
+            "exceedance": (clustered_series.iloc[:600] > clustered_threshold).to_numpy(),
+        }
+    ).to_csv(output_dir / "threshold_exceedances_source.csv", index=False)
     plot_threshold_exceedances(
         series=clustered_series.iloc[:600],
         threshold=clustered_threshold,
@@ -95,6 +110,17 @@ def main() -> None:
     isolated_values = np.abs(simulate_iid_gaussian(n_steps=3000, seed=11))
     isolated_series = pd.Series(isolated_values, name="isolated_stress")
     isolated_threshold = float(np.quantile(isolated_values, 0.97))
+    pd.DataFrame(
+        {
+            "step": np.arange(600, dtype=int),
+            "clustered_value": clustered_series.iloc[:600].to_numpy(),
+            "clustered_threshold": clustered_threshold,
+            "clustered_exceedance": (clustered_series.iloc[:600] > clustered_threshold).to_numpy(),
+            "isolated_value": isolated_series.iloc[:600].to_numpy(),
+            "isolated_threshold": isolated_threshold,
+            "isolated_exceedance": (isolated_series.iloc[:600] > isolated_threshold).to_numpy(),
+        }
+    ).to_csv(output_dir / "clustered_vs_isolated_extremes_source.csv", index=False)
     plot_clustered_vs_isolated_extremes(
         clustered_series=clustered_series.iloc[:600],
         isolated_series=isolated_series.iloc[:600],
@@ -104,6 +130,10 @@ def main() -> None:
     )
 
     return_times = compute_return_times(observable, threshold=float(np.quantile(observable, 0.95)))
+    pd.DataFrame({"return_time": return_times}).to_csv(
+        output_dir / "return_time_distribution_source.csv",
+        index=False,
+    )
     plot_return_time_distribution(
         return_times=return_times,
         output_path=output_dir / "return_time_distribution.png",
@@ -114,6 +144,16 @@ def main() -> None:
         threshold_quantiles=[0.90, 0.93, 0.95, 0.97, 0.99],
         run_length=4,
     )
+    pd.DataFrame(
+        {
+            "quantile": [row.quantile for row in sensitivity],
+            "threshold": [row.threshold for row in sensitivity],
+            "n_exceedances": [row.n_exceedances for row in sensitivity],
+            "n_clusters": [row.n_clusters for row in sensitivity],
+            "theta_runs": [row.theta_runs for row in sensitivity],
+            "theta_cluster_mean": [row.theta_cluster_mean for row in sensitivity],
+        }
+    ).to_csv(output_dir / "extremal_index_by_threshold_source.csv", index=False)
     plot_extremal_index_by_threshold(
         quantiles=[row.quantile for row in sensitivity],
         theta_values=[row.theta_runs for row in sensitivity],
@@ -127,6 +167,14 @@ def main() -> None:
         (pd.Timestamp("2008-09-30"), pd.Timestamp("2010-06-30"), "gfc"),
         (pd.Timestamp("2020-03-31"), pd.Timestamp("2021-06-30"), "pandemic"),
     ]
+    pd.DataFrame(
+        {
+            "date": macro_series.index,
+            "value": macro_series.to_numpy(),
+            "threshold": macro_threshold,
+            "exceedance": (macro_series >= macro_threshold).to_numpy(),
+        }
+    ).to_csv(output_dir / "macro_financial_crisis_timeline_source.csv", index=False)
     plot_macro_financial_timeline(
         series=macro_series,
         threshold=macro_threshold,
@@ -135,6 +183,7 @@ def main() -> None:
     )
 
     heatmap_frame = _build_stress_heatmap_frame()
+    heatmap_frame.to_csv(output_dir / "multivariate_stress_heatmap_source.csv", index=False)
     plot_multivariate_stress_heatmap(
         frame=heatmap_frame,
         output_path=output_dir / "multivariate_stress_heatmap.png",

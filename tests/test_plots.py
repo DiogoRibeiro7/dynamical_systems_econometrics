@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pandas as pd
 
 from dynsys_econometrics.plots import (
     plot_baseline_comparison,
     plot_extremal_index_bars,
     plot_joint_stress_timeline,
+    plot_series_with_threshold,
     plot_time_series_with_exceedances,
 )
 
@@ -44,3 +47,10 @@ def test_plot_baseline_comparison_returns_figure() -> None:
     )
     fig, ax = plot_baseline_comparison(table)
     assert fig is ax.figure
+
+
+def test_plot_series_with_threshold_saves_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "series.png"
+    series = pd.Series([1.0, 2.0, 3.0], index=pd.date_range("2020-01-01", periods=3, freq="D"))
+    plot_series_with_threshold(series, threshold=2.0, output_path=output_path)
+    assert output_path.exists()

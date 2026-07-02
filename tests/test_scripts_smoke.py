@@ -35,12 +35,19 @@ def test_generate_article_figures_writes_expected_bundle(tmp_path, monkeypatch) 
     output_dir = tmp_path / "article" / "figures"
     expected_files = {
         "simulated_orbit_and_observable.png",
+        "simulated_orbit_and_observable_source.csv",
         "threshold_exceedances.png",
+        "threshold_exceedances_source.csv",
         "clustered_vs_isolated_extremes.png",
+        "clustered_vs_isolated_extremes_source.csv",
         "return_time_distribution.png",
+        "return_time_distribution_source.csv",
         "extremal_index_by_threshold.png",
+        "extremal_index_by_threshold_source.csv",
         "macro_financial_crisis_timeline.png",
+        "macro_financial_crisis_timeline_source.csv",
         "multivariate_stress_heatmap.png",
+        "multivariate_stress_heatmap_source.csv",
     }
     assert output_dir.exists()
     assert expected_files.issubset({path.name for path in output_dir.iterdir()})

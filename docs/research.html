@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Research Guardrails | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.45rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code {
+        font-family: "Courier New", monospace;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        padding: 20px;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <p><a href="index.html">Back to project home</a></p>
+        <h1>Research guardrails</h1>
+        <p>
+          This repository uses dynamical-systems-inspired methods to study
+          recurrence, clustering, and joint stress in observed economic time
+          series. That makes the methods useful, but it also creates clear
+          limits on what the outputs justify.
+        </p>
+
+        <div class="grid">
+          <article class="card">
+            <h2>Supported claims</h2>
+            <ul>
+              <li>one series exhibits more clustered extremes than another</li>
+              <li>return times to stress regions differ across systems or regimes</li>
+              <li>joint stress events involve simultaneous threshold exceedances</li>
+              <li>rare-event diagnostics and baseline econometric summaries capture different patterns</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Unsupported claims</h2>
+            <ul>
+              <li>observed economies are literally deterministic maps</li>
+              <li>recurrence diagnostics identify causal mechanisms</li>
+              <li>extremal-index estimates isolate a policy effect</li>
+              <li>return-time summaries forecast the exact next crisis date</li>
+            </ul>
+          </article>
+        </div>
+
+        <h2>How to frame results</h2>
+        <p>
+          Use language such as <em>describes</em>, <em>is consistent with</em>,
+          <em>highlights clustering</em>, or <em>suggests recurrence structure</em>.
+          Avoid language such as <em>proves</em>, <em>shows causality</em>, or
+          <em>predicts the next crisis date</em>.
+        </p>
+
+        <h2>Before publishing a claim</h2>
+        <ul>
+          <li>Confirm the claim is traceable to a saved figure, table, or CSV.</li>
+          <li>Check whether the result is based on real empirical data or a synthetic fallback.</li>
+          <li>Inspect threshold sensitivity before writing strong prose.</li>
+          <li>Keep descriptive diagnostics separate from causal interpretation.</li>
+        </ul>
+
+        <h2>Repository references</h2>
+        <ul>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/empirical_claim_guardrails.md">Empirical claim guardrails</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/article_support_matrix.md">Article support matrix</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/article/claims_checklist.md">Article claims checklist</a></li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
