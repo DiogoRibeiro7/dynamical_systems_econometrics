@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Command Map | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <p><a href="index.html">Back to project home</a></p>
+        <h1>Command map</h1>
+        <p>
+          This page collects the package CLI and script entry points in one place,
+          together with their output locations and whether they require external
+          data.
+        </p>
+
+        <h2>Package CLI</h2>
+        <div class="grid">
+          <article class="card">
+            <h2><code>python -m dynsys_econometrics smoke</code></h2>
+            <p>Runs the minimal rare-event comparison between a logistic-map observable and an AR(1) baseline.</p>
+            <p>External data: no.</p>
+            <p>Outputs: terminal summary only.</p>
+          </article>
+
+          <article class="card">
+            <h2><code>python -m dynsys_econometrics synthetic --config ...</code></h2>
+            <p>Runs a synthetic experiment from YAML configuration.</p>
+            <p>External data: no.</p>
+            <p>Outputs: tables, figures, and <code>run_summary.json</code> under the configured output directory.</p>
+          </article>
+
+          <article class="card">
+            <h2><code>python -m dynsys_econometrics empirical --config ...</code></h2>
+            <p>Runs an empirical experiment on a local canonical CSV panel.</p>
+            <p>External data: yes, local input path required.</p>
+            <p>Outputs: tables, figures, and <code>run_summary.json</code> under the configured output directory.</p>
+          </article>
+
+          <article class="card">
+            <h2><code>python -m dynsys_econometrics validate-catalog --catalog ...</code></h2>
+            <p>Validates the public-data catalog metadata.</p>
+            <p>External data: no.</p>
+            <p>Outputs: terminal validation summary only.</p>
+          </article>
+        </div>
+
+        <h2>Script entry points</h2>
+        <div class="grid">
+          <article class="card">
+            <h2><code>python scripts/run_smoke_experiment.py</code></h2>
+            <p>Legacy script version of the minimal smoke workflow.</p>
+            <p>External data: no.</p>
+            <p>Outputs: terminal summary only.</p>
+          </article>
+
+          <article class="card">
+            <h2><code>python scripts/run_experiment.py --config configs/synthetic.yaml</code></h2>
+            <p>Generic experiment wrapper for synthetic or empirical modes.</p>
+            <p>External data: depends on config mode.</p>
+            <p>Outputs: configured experiment directory.</p>
+          </article>
+
+          <article class="card">
+            <h2><code>python scripts/generate_article_figures.py</code></h2>
+            <p>Generates the article figure bundle and matching source CSV files.</p>
+            <p>External data: no, but uses <code>data/raw/macro_stress_example.csv</code> if present.</p>
+            <p>Outputs: <code>article/figures/</code>.</p>
+          </article>
+
+          <article class="card">
+            <h2><code>python scripts/fetch_public_data.py --catalog data/catalog.example.yaml</code></h2>
+            <p>Catalog-validation helper for the offline-first ingestion layer.</p>
+            <p>External data: no.</p>
+            <p>Outputs: terminal validation summary only.</p>
+          </article>
+        </div>
+
+        <h2>Common quality commands</h2>
+        <pre><code>pytest -q
+ruff check .
+mypy
+</code></pre>
+
+        <h2>Operational notes</h2>
+        <ul>
+          <li>The package CLI is the preferred public entry point.</li>
+          <li>Empirical commands assume the canonical long format: <code>date, series_id, value</code>.</li>
+          <li>Article figures are reproducible from script entry points rather than notebook-only execution.</li>
+          <li>Synthetic fallbacks are useful for smoke tests and examples, but they are not empirical evidence.</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>
