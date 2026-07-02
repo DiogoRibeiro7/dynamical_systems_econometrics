@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Workflow Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.5rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
+      }
+
+      ol,
+      ul {
+        padding-left: 22px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <p><a href="index.html">Back to project home</a></p>
+        <h1>End-to-end workflow</h1>
+        <p>
+          This repository is designed as a research workflow rather than a
+          standalone estimator. The path is: construct benchmark systems, define
+          rare events, measure recurrence and clustering, then repeat the same
+          logic on macro-financial data.
+        </p>
+
+        <h2>1. Install the project</h2>
+        <pre><code>python -m venv .venv
+source .venv/bin/activate
+pip install -e ".[dev]"</code></pre>
+
+        <h2>2. Start from simulated benchmarks</h2>
+        <p>
+          Use the simulation module to compare iid, dependent, intermittent, and
+          multivariate systems before moving to empirical data. The relevant entry
+          points are <code>simulate_iid_gaussian</code>, <code>simulate_student_t</code>,
+          <code>simulate_ar1</code>, <code>simulate_garch11</code>,
+          <code>simulate_pomeau_manneville</code>, and
+          <code>simulate_coupled_logistic_maps</code>.
+        </p>
+        <p>
+          Notebook: <code>01_simulated_systems_extremes.ipynb</code>
+        </p>
+
+        <h2>3. Define the rare-event region</h2>
+        <p>
+          Choose a high threshold and extract exceedances. Then test how stable the
+          conclusions are under nearby threshold choices.
+        </p>
+        <ul>
+          <li><code>extract_threshold_exceedances</code></li>
+          <li><code>block_maxima</code></li>
+          <li><code>peaks_over_threshold</code></li>
+          <li><code>threshold_sensitivity_analysis</code></li>
+        </ul>
+
+        <h2>4. Measure dependence in extremes</h2>
+        <p>
+          Rare events in this project are not assumed to be isolated. The key
+          question is whether exceedances arrive in bursts and how much those bursts
+          reduce the effective frequency of independent crises.
+        </p>
+        <ul>
+          <li><code>runs_declustering</code></li>
+          <li><code>estimate_runs_extremal_index</code></li>
+          <li><code>estimate_cluster_size_extremal_index</code></li>
+          <li><code>estimate_extremal_index</code></li>
+        </ul>
+        <p>
+          Notebook: <code>02_return_times_and_extremal_index.ipynb</code>
+        </p>
+
+        <h2>5. Analyze recurrence and return times</h2>
+        <p>
+          Once exceedances are defined, use recurrence gaps to test whether the
+          empirical behavior is close to an exponential benchmark or exhibits
+          stronger persistence.
+        </p>
+        <ul>
+          <li><code>first_hitting_time</code></li>
+          <li><code>compute_return_times</code></li>
+          <li><code>return_time_distribution</code></li>
+          <li><code>empirical_survival_curve</code></li>
+          <li><code>exponential_benchmark_comparison</code></li>
+          <li><code>ks_exponential_diagnostic</code></li>
+        </ul>
+
+        <h2>6. Move to empirical macro-financial data</h2>
+        <p>
+          All loaders normalize inputs to the same schema:
+          <code>date, series_id, value</code>. That makes the extreme-event and
+          recurrence tooling independent of the source.
+        </p>
+        <ul>
+          <li><code>load_fred</code> or <code>load_fred_csv</code></li>
+          <li><code>load_oecd_csv</code></li>
+          <li><code>load_world_bank_csv</code></li>
+          <li><code>load_ecb_sdw_csv</code></li>
+          <li><code>load_yfinance_series</code></li>
+        </ul>
+        <p>
+          Notebook: <code>03_macro_financial_stress_case_study.ipynb</code>
+        </p>
+
+        <h2>7. Extend to joint stress events</h2>
+        <p>
+          When the research question is about coordinated instability across
+          inflation, unemployment, spreads, yields, and markets, work from the
+          multivariate simulation and plotting tools.
+        </p>
+        <p>
+          Notebook: <code>04_multivariate_tail_dependence.ipynb</code>
+        </p>
+
+        <h2>8. Produce publication figures</h2>
+        <p>
+          Figures should be reproducible outside the notebooks. The notebooks are
+          exploratory interfaces, while the script is the publication path.
+        </p>
+        <pre><code>python scripts/generate_article_figures.py</code></pre>
+        <p>
+          Notebook: <code>05_article_figures.ipynb</code>
+        </p>
+
+        <h2>9. Preserve reproducibility</h2>
+        <p>
+          The expected quality gate is the same one used in CI:
+        </p>
+        <pre><code>pytest -q
+ruff check .
+mypy</code></pre>
+
+        <h2>Practical reading order</h2>
+        <ol>
+          <li>Start with the project home page for scope and navigation.</li>
+          <li>Use the notebook index for research entry points.</li>
+          <li>Use the API reference when turning notebook steps into scripts or package calls.</li>
+          <li>Use the article draft for the public narrative layer.</li>
+        </ol>
+      </section>
+    </main>
+  </body>
+</html>

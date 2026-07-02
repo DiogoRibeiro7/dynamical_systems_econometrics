@@ -1,0 +1,231 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>API Reference | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2,
+      h3 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 12px;
+        font-size: 1.55rem;
+      }
+
+      h3 {
+        margin-top: 22px;
+        margin-bottom: 10px;
+        font-size: 1.05rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        padding: 20px;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <p><a href="index.html">Back to project home</a></p>
+        <h1>API reference</h1>
+        <p>
+          The package is organized around five working surfaces: simulation,
+          rare-event diagnostics, return-time analysis, empirical data loading,
+          and plotting. The import root is <code>dynsys_econometrics</code>.
+        </p>
+
+        <h2>Import surface</h2>
+        <pre><code>from dynsys_econometrics import (
+    block_maxima,
+    compute_return_times,
+    estimate_extremal_index,
+    exponential_benchmark_comparison,
+    extract_threshold_exceedances,
+    first_hitting_time,
+    load_fred,
+    load_world_bank_csv,
+    logistic_map,
+    peaks_over_threshold,
+    return_time_distribution,
+    runs_declustering,
+    simulate_ar1,
+    simulate_garch11,
+    simulate_iid_gaussian,
+    simulate_pomeau_manneville,
+    simulate_student_t,
+    threshold_sensitivity_analysis,
+)</code></pre>
+
+        <div class="grid">
+          <article class="card">
+            <h2>Simulation</h2>
+            <ul>
+              <li><code>logistic_map</code>: iterate the logistic map from an initial state.</li>
+              <li><code>simulate_iid_gaussian</code>: generate iid Gaussian benchmarks.</li>
+              <li><code>simulate_student_t</code>: generate heavy-tailed iid benchmarks.</li>
+              <li><code>simulate_ar1</code>: simulate dependent Gaussian autoregression.</li>
+              <li><code>simulate_garch11</code>: simulate clustered volatility.</li>
+              <li><code>simulate_pomeau_manneville</code>: simulate intermittent dynamics.</li>
+              <li><code>simulate_coupled_logistic_maps</code>: build a multivariate chaotic example.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Extremes</h2>
+            <ul>
+              <li><code>extract_threshold_exceedances</code>: recover exceedance values and timing.</li>
+              <li><code>block_maxima</code>: compute maxima over fixed windows.</li>
+              <li><code>peaks_over_threshold</code>: expose POT exceedance magnitudes.</li>
+              <li><code>runs_declustering</code>: cluster nearby exceedances under a runs rule.</li>
+              <li><code>runs_declustering_from_indicator</code>: apply the same logic to Boolean exceedance flags.</li>
+              <li><code>estimate_cluster_size_extremal_index</code>: infer the extremal index from mean cluster size.</li>
+              <li><code>estimate_runs_extremal_index</code>: estimate the extremal index from runs declustering.</li>
+              <li><code>estimate_extremal_index</code>: general entry point for extremal-index estimation.</li>
+              <li><code>threshold_sensitivity_analysis</code>: compare diagnostics across threshold choices.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Return times</h2>
+            <ul>
+              <li><code>first_hitting_time</code>: find the first threshold crossing after a starting index.</li>
+              <li><code>compute_return_times</code>: compute recurrence gaps between exceedances.</li>
+              <li><code>return_time_distribution</code>: summarize recurrence statistics.</li>
+              <li><code>empirical_survival_curve</code>: estimate the survival function of return times.</li>
+              <li><code>exponential_benchmark_comparison</code>: compare recurrence data against an exponential benchmark.</li>
+              <li><code>ks_exponential_diagnostic</code>: quantify deviation from the exponential law.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Data loading</h2>
+            <ul>
+              <li><code>load_time_series_csv</code>: normalize a generic local time-series CSV.</li>
+              <li><code>load_fred_csv</code>: standardize FRED CSV exports.</li>
+              <li><code>load_fred</code>: fetch FRED data into the standard schema.</li>
+              <li><code>load_ecb_sdw_csv</code>: normalize ECB Statistical Data Warehouse exports.</li>
+              <li><code>load_oecd_csv</code>: normalize OECD CSV exports.</li>
+              <li><code>load_world_bank_csv</code>: normalize World Bank indicator exports.</li>
+              <li><code>load_yfinance_series</code>: fetch market proxy data through <code>yfinance</code>.</li>
+              <li><code>DataLoadFailure</code>: explicit error type for broken source formats.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Plotting</h2>
+            <ul>
+              <li><code>plot_series_with_threshold</code>: show an observable with its exceedance threshold.</li>
+              <li><code>plot_orbit_and_observable</code>: compare state evolution and observed series.</li>
+              <li><code>plot_threshold_exceedances</code>: mark rare events in time.</li>
+              <li><code>plot_clustered_vs_isolated_extremes</code>: visualize dependence in exceedance clusters.</li>
+              <li><code>plot_return_time_distribution</code>: display recurrence summaries.</li>
+              <li><code>plot_extremal_index_by_threshold</code>: inspect threshold sensitivity visually.</li>
+              <li><code>plot_macro_financial_timeline</code>: communicate empirical stress episodes.</li>
+              <li><code>plot_multivariate_stress_heatmap</code>: visualize synchronized stress across variables.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Result objects</h2>
+            <ul>
+              <li><code>ExceedanceExtractionResult</code>: threshold exceedance values, indices, and counts.</li>
+              <li><code>ExtremalIndexResult</code>: extremal-index estimate and supporting diagnostics.</li>
+              <li><code>ThresholdSensitivityResult</code>: threshold grid outputs for stability checks.</li>
+              <li><code>ReturnTimeDistribution</code>: summary statistics for recurrence gaps.</li>
+              <li><code>ExponentialComparisonResult</code>: benchmark comparison outputs for return times.</li>
+            </ul>
+          </article>
+        </div>
+
+        <h2>Notebook map</h2>
+        <p>
+          The notebook plan covers simulated systems, return-time and extremal-index
+          diagnostics, a macro-financial case study, multivariate stress, and
+          article figure generation. For the research workflow, use
+          <a href="workflow.html">the end-to-end guide</a>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
