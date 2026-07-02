@@ -33,8 +33,21 @@ where = ["src"]
 [tool.ruff]
 line-length = 100
 target-version = "py310"
+extend-exclude = ["notebooks"]
+
+[tool.ruff.lint]
+ignore = ["E501"]
 
 [tool.mypy]
 python_version = "3.10"
 strict = true
 ignore_missing_imports = true
+files = [
+    "src/dynsys_econometrics/extremes.py",
+    "src/dynsys_econometrics/plots.py",
+    "src/dynsys_econometrics/return_times.py",
+    "src/dynsys_econometrics/simulation.py",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
