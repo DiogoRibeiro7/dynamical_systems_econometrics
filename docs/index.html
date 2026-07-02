@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      .wrap {
+        max-width: 1040px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .hero {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 40px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        margin: 0 0 16px;
+        line-height: 1.1;
+      }
+
+      h1 {
+        font-size: clamp(2.4rem, 5vw, 4.6rem);
+        max-width: 10ch;
+      }
+
+      h2 {
+        font-size: 1.4rem;
+      }
+
+      p {
+        line-height: 1.7;
+        color: var(--muted);
+        margin: 0 0 16px;
+      }
+
+      .lede {
+        font-size: 1.15rem;
+        max-width: 62ch;
+      }
+
+      .actions,
+      .grid {
+        display: grid;
+        gap: 16px;
+      }
+
+      .actions {
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+        margin-top: 28px;
+      }
+
+      .button,
+      .card {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        text-decoration: none;
+      }
+
+      .button {
+        display: inline-block;
+        padding: 14px 18px;
+        color: var(--ink);
+        font-weight: 700;
+      }
+
+      .button.primary {
+        background: var(--accent);
+        border-color: var(--accent);
+        color: #fffaf2;
+      }
+
+      .section {
+        margin-top: 24px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      }
+
+      .card {
+        padding: 22px;
+      }
+
+      .card strong {
+        display: block;
+        margin-bottom: 10px;
+      }
+
+      code {
+        font-family: "Courier New", monospace;
+        color: var(--ink);
+      }
+
+      .footer {
+        margin-top: 28px;
+        padding-top: 20px;
+        border-top: 1px solid var(--line);
+        font-size: 0.95rem;
+      }
+
+      @media (max-width: 640px) {
+        .hero {
+          padding: 28px 22px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="wrap">
+      <section class="hero">
+        <p><strong>Research repository</strong></p>
+        <h1>Dynamical Systems, Rare Events, and Econometrics</h1>
+        <p class="lede">
+          A reproducible Python project studying crises and tail dependence through
+          dynamical-systems-inspired extreme value theory, recurrence diagnostics,
+          and macro-financial data workflows.
+        </p>
+
+        <div class="actions">
+          <a class="button primary" href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics">View repository</a>
+          <a class="button" href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/article/article_draft.md">Read article draft</a>
+          <a class="button" href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/notebooks/README.md">Browse notebooks</a>
+        </div>
+      </section>
+
+      <section class="section grid">
+        <article class="card">
+          <h2>Core questions</h2>
+          <p>Can crisis regimes be treated as rare events with dependence rather than isolated iid shocks?</p>
+          <p>How much clustering is present in exceedances, and what does that imply for return times and stress persistence?</p>
+        </article>
+
+        <article class="card">
+          <h2>What is implemented</h2>
+          <p>Simulation utilities, extremal-index estimators, threshold diagnostics, return-time tools, empirical loaders, notebooks, figure scripts, and CI-backed quality checks.</p>
+        </article>
+
+        <article class="card">
+          <h2>Quick start</h2>
+          <p><code>pip install -e ".[dev]"</code></p>
+          <p><code>python scripts/run_smoke_experiment.py</code></p>
+          <p><code>python scripts/generate_article_figures.py</code></p>
+        </article>
+      </section>
+
+      <section class="section grid">
+        <article class="card">
+          <strong>Data contract</strong>
+          <p>Every loader is normalized to <code>date, series_id, value</code> so diagnostics remain source-agnostic.</p>
+        </article>
+
+        <article class="card">
+          <strong>Reproducibility</strong>
+          <p>The repository ships with tests, Ruff, MyPy, release tagging, citation metadata, and GitHub Actions workflows.</p>
+        </article>
+
+        <article class="card">
+          <strong>Citation</strong>
+          <p>Use the repository metadata in <code>CITATION.cff</code> for academic or technical reuse.</p>
+        </article>
+      </section>
+
+      <section class="footer">
+        <p>Maintained by Diogo Ribeiro. The current public release is tagged <code>v0.1.0</code>.</p>
+      </section>
+    </main>
+  </body>
+</html>
