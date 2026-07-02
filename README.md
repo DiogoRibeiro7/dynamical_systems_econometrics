@@ -75,7 +75,7 @@ mypy
 
 ## Command map
 
-This repository currently exposes script entry points rather than a package CLI:
+This repository exposes both a package CLI and script entry points:
 
 - `python -m dynsys_econometrics`
   - purpose: package CLI with `smoke`, `synthetic`, `empirical`, and `validate-catalog` subcommands
@@ -143,6 +143,17 @@ scripts/                Smoke experiment and article-figure generation
 src/dynsys_econometrics Python package for simulation, diagnostics, loaders, and plots
 tests/                  Unit tests and smoke tests
 ```
+
+## Package surface
+
+The package now includes:
+
+- contracts and config helpers for reproducible experiment setup
+- simulation benchmarks for nonlinear and econometric comparison
+- rare-event, recurrence, and multivariate stress diagnostics
+- panel transforms and lightweight econometric baselines
+- experiment orchestration with saved tables, figures, and JSON summaries
+- plotting helpers for notebooks, docs, and article assets
 
 ## Notebook workflow
 

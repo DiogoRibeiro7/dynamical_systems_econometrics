@@ -102,7 +102,11 @@
 source .venv/bin/activate
 pip install -e ".[dev]"</code></pre>
 
-        <h2>2. Start from simulated benchmarks</h2>
+        <h2>2. Confirm the package CLI works</h2>
+        <pre><code>python -m dynsys_econometrics
+python -m dynsys_econometrics smoke</code></pre>
+
+        <h2>3. Start from simulated benchmarks</h2>
         <p>
           Use the simulation module to compare iid, dependent, intermittent, and
           multivariate systems before moving to empirical data. The relevant entry
@@ -112,10 +116,10 @@ pip install -e ".[dev]"</code></pre>
           <code>simulate_coupled_logistic_maps</code>.
         </p>
         <p>
-          Notebook: <code>01_simulated_systems_extremes.ipynb</code>
+          Notebooks: <code>00_method_smoke_test.ipynb</code> and <code>01_synthetic_dynamics.ipynb</code>
         </p>
 
-        <h2>3. Define the rare-event region</h2>
+        <h2>4. Define the rare-event region</h2>
         <p>
           Choose a high threshold and extract exceedances. Then test how stable the
           conclusions are under nearby threshold choices.
@@ -127,7 +131,7 @@ pip install -e ".[dev]"</code></pre>
           <li><code>threshold_sensitivity_analysis</code></li>
         </ul>
 
-        <h2>4. Measure dependence in extremes</h2>
+        <h2>5. Measure dependence in extremes</h2>
         <p>
           Rare events in this project are not assumed to be isolated. The key
           question is whether exceedances arrive in bursts and how much those bursts
@@ -140,10 +144,10 @@ pip install -e ".[dev]"</code></pre>
           <li><code>estimate_extremal_index</code></li>
         </ul>
         <p>
-          Notebook: <code>02_return_times_and_extremal_index.ipynb</code>
+          Notebook: <code>03_rare_events_and_return_times.ipynb</code>
         </p>
 
-        <h2>5. Analyze recurrence and return times</h2>
+        <h2>6. Analyze recurrence and return times</h2>
         <p>
           Once exceedances are defined, use recurrence gaps to test whether the
           empirical behavior is close to an exponential benchmark or exhibits
@@ -153,12 +157,16 @@ pip install -e ".[dev]"</code></pre>
           <li><code>first_hitting_time</code></li>
           <li><code>compute_return_times</code></li>
           <li><code>return_time_distribution</code></li>
+          <li><code>return_times</code></li>
+          <li><code>inter_event_durations</code></li>
           <li><code>empirical_survival_curve</code></li>
+          <li><code>survival_curve</code></li>
+          <li><code>recurrence_rate</code></li>
           <li><code>exponential_benchmark_comparison</code></li>
           <li><code>ks_exponential_diagnostic</code></li>
         </ul>
 
-        <h2>6. Move to empirical macro-financial data</h2>
+        <h2>7. Move to empirical macro-financial data</h2>
         <p>
           All loaders normalize inputs to the same schema:
           <code>date, series_id, value</code>. That makes the extreme-event and
@@ -170,22 +178,42 @@ pip install -e ".[dev]"</code></pre>
           <li><code>load_world_bank_csv</code></li>
           <li><code>load_ecb_sdw_csv</code></li>
           <li><code>load_yfinance_series</code></li>
+          <li><code>load_panel_from_directory</code></li>
+          <li><code>validate_catalog</code></li>
         </ul>
         <p>
-          Notebook: <code>03_macro_financial_stress_case_study.ipynb</code>
+          Notebook: <code>02_empirical_data_audit.ipynb</code>
         </p>
 
-        <h2>7. Extend to joint stress events</h2>
+        <h2>8. Extend to joint stress events</h2>
         <p>
           When the research question is about coordinated instability across
           inflation, unemployment, spreads, yields, and markets, work from the
           multivariate simulation and plotting tools.
         </p>
         <p>
-          Notebook: <code>04_multivariate_tail_dependence.ipynb</code>
+          Notebook: <code>04_multivariate_stress.ipynb</code>
         </p>
 
-        <h2>8. Produce publication figures</h2>
+        <h2>9. Compare against baseline diagnostics</h2>
+        <p>
+          Baseline econometric summaries remain useful. The repository includes
+          grouped transforms and simple baselines so recurrence outputs can be
+          aligned with volatility- and drawdown-style diagnostics.
+        </p>
+        <ul>
+          <li><code>log_returns</code></li>
+          <li><code>pct_change</code></li>
+          <li><code>rolling_zscore</code></li>
+          <li><code>rolling_volatility</code></li>
+          <li><code>drawdown_series</code></li>
+          <li><code>compare_event_diagnostics</code></li>
+        </ul>
+        <p>
+          Notebook: <code>05_econometric_baselines.ipynb</code>
+        </p>
+
+        <h2>10. Produce publication figures</h2>
         <p>
           Figures should be reproducible outside the notebooks. The notebooks are
           exploratory interfaces, while the script is the publication path.
@@ -195,7 +223,7 @@ pip install -e ".[dev]"</code></pre>
           Notebook: <code>05_article_figures.ipynb</code>
         </p>
 
-        <h2>9. Preserve reproducibility</h2>
+        <h2>11. Preserve reproducibility</h2>
         <p>
           The expected quality gate is the same one used in CI:
         </p>
@@ -206,6 +234,7 @@ mypy</code></pre>
         <h2>Practical reading order</h2>
         <ol>
           <li>Start with the project home page for scope and navigation.</li>
+          <li>Confirm the package CLI and smoke path work first.</li>
           <li>Use the notebook index for research entry points.</li>
           <li>Use the API reference when turning notebook steps into scripts or package calls.</li>
           <li>Use the article draft for the public narrative layer.</li>

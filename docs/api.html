@@ -110,23 +110,30 @@
         <p><a href="index.html">Back to project home</a></p>
         <h1>API reference</h1>
         <p>
-          The package is organized around five working surfaces: simulation,
-          rare-event diagnostics, return-time analysis, empirical data loading,
-          and plotting. The import root is <code>dynsys_econometrics</code>.
+          The package is organized around contracts and config, simulation,
+          rare-event diagnostics, recurrence analysis, multivariate stress,
+          empirical data loading and transforms, econometric baselines, and
+          plotting/experiment orchestration. The import root is
+          <code>dynsys_econometrics</code>.
         </p>
 
         <h2>Import surface</h2>
         <pre><code>from dynsys_econometrics import (
+    ExperimentResult,
+    TimeSeriesFrame,
     block_maxima,
     compute_return_times,
     estimate_extremal_index,
     exponential_benchmark_comparison,
     extract_threshold_exceedances,
     first_hitting_time,
+    joint_exceedances,
     load_fred,
     load_world_bank_csv,
     logistic_map,
     peaks_over_threshold,
+    rolling_volatility,
+    run_synthetic_experiment,
     return_time_distribution,
     runs_declustering,
     simulate_ar1,
@@ -139,14 +146,27 @@
 
         <div class="grid">
           <article class="card">
+            <h2>Contracts and config</h2>
+            <ul>
+              <li><code>TimeSeriesFrame</code>: validated long-format panel contract.</li>
+              <li><code>EventFrame</code>: validated threshold-event contract.</li>
+              <li><code>ExperimentResult</code>: registry of saved experiment outputs.</li>
+              <li><code>load_config</code>: load YAML experiment settings.</li>
+              <li><code>resolve_output_dir</code>: determine reproducible output paths.</li>
+            </ul>
+          </article>
+
+          <article class="card">
             <h2>Simulation</h2>
             <ul>
               <li><code>logistic_map</code>: iterate the logistic map from an initial state.</li>
+              <li><code>simulate_logistic_map</code>: return a long-format simulation frame.</li>
               <li><code>simulate_iid_gaussian</code>: generate iid Gaussian benchmarks.</li>
               <li><code>simulate_student_t</code>: generate heavy-tailed iid benchmarks.</li>
               <li><code>simulate_ar1</code>: simulate dependent Gaussian autoregression.</li>
               <li><code>simulate_garch11</code>: simulate clustered volatility.</li>
               <li><code>simulate_pomeau_manneville</code>: simulate intermittent dynamics.</li>
+              <li><code>simulate_intermittent_map</code>: return an intermittent benchmark frame.</li>
               <li><code>simulate_coupled_logistic_maps</code>: build a multivariate chaotic example.</li>
             </ul>
           </article>
@@ -163,6 +183,10 @@
               <li><code>estimate_runs_extremal_index</code>: estimate the extremal index from runs declustering.</li>
               <li><code>estimate_extremal_index</code>: general entry point for extremal-index estimation.</li>
               <li><code>threshold_sensitivity_analysis</code>: compare diagnostics across threshold choices.</li>
+              <li><code>threshold_exceedances</code>: annotate long-format panels with exceedance flags.</li>
+              <li><code>assign_runs</code>: assign run identifiers to event tables.</li>
+              <li><code>runs_extremal_index</code>: summarize clustering directly from event tables.</li>
+              <li><code>mean_excess_table</code>: compute threshold-by-threshold mean excess summaries.</li>
             </ul>
           </article>
 
@@ -179,8 +203,31 @@
           </article>
 
           <article class="card">
+            <h2>Recurrence tables</h2>
+            <ul>
+              <li><code>return_times</code>: return tidy inter-event durations.</li>
+              <li><code>inter_event_durations</code>: compute event-level durations explicitly.</li>
+              <li><code>recurrence_rate</code>: compute rolling or calendar event counts.</li>
+              <li><code>survival_curve</code>: estimate survival tables from duration data.</li>
+              <li><code>compare_return_time_distributions</code>: summarize recurrence by regime label.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Multivariate stress</h2>
+            <ul>
+              <li><code>wide_panel</code>: pivot long-format series into a wide matrix.</li>
+              <li><code>joint_exceedances</code>: build a joint-stress event table by date.</li>
+              <li><code>tail_dependence_coefficient</code>: estimate empirical upper-tail dependence.</li>
+              <li><code>stress_state_index</code>: aggregate exceedance matrices into a stress score.</li>
+            </ul>
+          </article>
+
+          <article class="card">
             <h2>Data loading</h2>
             <ul>
+              <li><code>load_timeseries_csv</code>: load a canonical long-format CSV into a validated contract.</li>
+              <li><code>load_panel_from_directory</code>: combine several local long-format CSV files.</li>
               <li><code>load_time_series_csv</code>: normalize a generic local time-series CSV.</li>
               <li><code>load_fred_csv</code>: standardize FRED CSV exports.</li>
               <li><code>load_fred</code>: fetch FRED data into the standard schema.</li>
@@ -188,7 +235,25 @@
               <li><code>load_oecd_csv</code>: normalize OECD CSV exports.</li>
               <li><code>load_world_bank_csv</code>: normalize World Bank indicator exports.</li>
               <li><code>load_yfinance_series</code>: fetch market proxy data through <code>yfinance</code>.</li>
+              <li><code>write_processed_panel</code>: write validated panels to disk.</li>
+              <li><code>validate_catalog</code>: validate the public-data catalog metadata.</li>
               <li><code>DataLoadFailure</code>: explicit error type for broken source formats.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Transforms and baselines</h2>
+            <ul>
+              <li><code>log_returns</code>: grouped log-return transform for positive series.</li>
+              <li><code>pct_change</code>: grouped percentage changes.</li>
+              <li><code>rolling_zscore</code>: trailing grouped z-scores.</li>
+              <li><code>standardize_panel</code>: within-series standardization.</li>
+              <li><code>winsorize_series</code>: grouped winsorization by quantile.</li>
+              <li><code>autocorrelation_summary</code>: baseline autocorrelation table.</li>
+              <li><code>rolling_volatility</code>: trailing volatility diagnostic.</li>
+              <li><code>drawdown_series</code>: drawdown path by series.</li>
+              <li><code>regime_summary</code>: descriptive aggregation by regime label.</li>
+              <li><code>compare_event_diagnostics</code>: align event outputs with baseline diagnostics.</li>
             </ul>
           </article>
 
@@ -201,8 +266,24 @@
               <li><code>plot_clustered_vs_isolated_extremes</code>: visualize dependence in exceedance clusters.</li>
               <li><code>plot_return_time_distribution</code>: display recurrence summaries.</li>
               <li><code>plot_extremal_index_by_threshold</code>: inspect threshold sensitivity visually.</li>
+              <li><code>plot_extremal_index_bars</code>: compare clustering across series.</li>
+              <li><code>plot_joint_stress_timeline</code>: display multivariate stress through time.</li>
+              <li><code>plot_baseline_comparison</code>: compare baseline diagnostics with event markers.</li>
+              <li><code>plot_conceptual_pipeline</code>: render the article-facing workflow diagram.</li>
               <li><code>plot_macro_financial_timeline</code>: communicate empirical stress episodes.</li>
               <li><code>plot_multivariate_stress_heatmap</code>: visualize synchronized stress across variables.</li>
+            </ul>
+          </article>
+
+          <article class="card">
+            <h2>Experiments and utilities</h2>
+            <ul>
+              <li><code>run_synthetic_experiment</code>: execute a synthetic workflow from config.</li>
+              <li><code>run_empirical_experiment</code>: execute an empirical workflow from config.</li>
+              <li><code>save_experiment_result</code>: persist tables, figures, and JSON summaries.</li>
+              <li><code>repo_root</code>: locate the repository root.</li>
+              <li><code>ensure_directory</code>: create directories deterministically.</li>
+              <li><code>write_json</code>: persist machine-readable run metadata.</li>
             </ul>
           </article>
 
@@ -221,8 +302,8 @@
         <h2>Notebook map</h2>
         <p>
           The notebook plan covers simulated systems, return-time and extremal-index
-          diagnostics, a macro-financial case study, multivariate stress, and
-          article figure generation. For the research workflow, use
+          diagnostics, an empirical audit path, multivariate stress, baseline
+          comparisons, and article figure generation. For the research workflow, use
           <a href="workflow.html">the end-to-end guide</a>.
         </p>
       </section>

@@ -4,10 +4,12 @@ import pandas as pd
 
 from dynsys_econometrics.data import (
     DataLoadFailure,
+    load_panel_from_directory,
     load_ecb_sdw_csv,
     load_fred_csv,
     load_oecd_csv,
     load_time_series_csv,
+    validate_catalog,
     load_world_bank_csv,
 )
 
@@ -95,3 +97,51 @@ def test_data_loader_rejects_missing_dates(tmp_path) -> None:
         assert False
     except DataLoadFailure:
         assert True
+
+
+def test_load_panel_from_directory_combines_files(tmp_path) -> None:
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-01-02"],
+            "series_id": ["a", "a"],
+            "value": [1.0, 2.0],
+        }
+    ).to_csv(tmp_path / "a.csv", index=False)
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-01-02"],
+            "series_id": ["b", "b"],
+            "value": [3.0, 4.0],
+        }
+    ).to_csv(tmp_path / "b.csv", index=False)
+
+    panel = load_panel_from_directory(tmp_path).to_frame()
+    assert panel.shape == (4, 3)
+    assert panel["series_id"].tolist() == ["a", "a", "b", "b"]
+
+
+def test_validate_catalog_accepts_example_mapping(tmp_path) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: example_series\n"
+        "    description: Example series\n"
+        "    source: local_csv\n"
+        "    path: data/raw/example.csv\n",
+        encoding="utf-8",
+    )
+    summary = validate_catalog(catalog_path)
+    assert summary["valid"] is True
+    assert summary["n_series"] == 1
+
+
+def test_validate_catalog_reports_missing_fields(tmp_path) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: broken_series\n",
+        encoding="utf-8",
+    )
+    summary = validate_catalog(catalog_path)
+    assert summary["valid"] is False
+    assert len(summary["errors"]) == 1

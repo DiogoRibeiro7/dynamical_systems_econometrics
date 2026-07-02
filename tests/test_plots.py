@@ -6,6 +6,7 @@ import pandas as pd
 
 from dynsys_econometrics.plots import (
     plot_baseline_comparison,
+    plot_conceptual_pipeline,
     plot_extremal_index_bars,
     plot_joint_stress_timeline,
     plot_series_with_threshold,
@@ -53,4 +54,36 @@ def test_plot_series_with_threshold_saves_file(tmp_path: Path) -> None:
     output_path = tmp_path / "series.png"
     series = pd.Series([1.0, 2.0, 3.0], index=pd.date_range("2020-01-01", periods=3, freq="D"))
     plot_series_with_threshold(series, threshold=2.0, output_path=output_path)
+    assert output_path.exists()
+
+
+def test_plot_conceptual_pipeline_saves_file(tmp_path: Path) -> None:
+    output_path = tmp_path / "pipeline.png"
+    plot_conceptual_pipeline(
+        stages=[
+            "Raw series",
+            "Transformations",
+            "Events",
+            "Recurrence",
+            "Evidence",
+        ],
+        output_path=output_path,
+    )
+    assert output_path.exists()
+
+
+def test_plot_conceptual_pipeline_rejects_empty_stages(tmp_path: Path) -> None:
+    output_path = tmp_path / "pipeline.png"
+    try:
+        plot_conceptual_pipeline(stages=[], output_path=output_path)
+        assert False
+    except ValueError as exc:
+        assert "non-empty" in str(exc)
+
+
+def test_plot_extremal_index_bars_figure_can_be_saved(tmp_path: Path) -> None:
+    output_path = tmp_path / "bars.png"
+    table = pd.DataFrame({"series_id": ["a", "b"], "extremal_index": [0.7, 0.4]})
+    fig, _ = plot_extremal_index_bars(table)
+    fig.savefig(output_path, dpi=160)
     assert output_path.exists()
