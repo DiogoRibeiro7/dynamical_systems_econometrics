@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Config Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Reuse Guide | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -123,71 +123,51 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Config guide</h1>
+        <h1>Reuse guide</h1>
         <p>
-          The repository uses small YAML files to separate experiment settings
-          from code. The main split is between synthetic and empirical runs,
-          with separate output directories and optional figure-specific settings.
+          This repository is designed for software reuse, workflow reuse, and
+          methodological inspection. Those are not the same thing as reusing the
+          repository's substantive interpretations or presenting its exploratory
+          outputs as settled evidence.
         </p>
 
-        <h2>Config files in the repository</h2>
+        <h2>Software reuse</h2>
         <ul>
-          <li><code>configs/default.yaml</code>: baseline project, analysis, plot, and output defaults</li>
-          <li><code>configs/synthetic.yaml</code>: synthetic experiment example</li>
-          <li><code>configs/empirical.yaml</code>: empirical experiment example</li>
-          <li><code>configs/figures.yaml</code>: article-figure configuration surface</li>
-          <li><code>configs/experiment.yaml</code>: earlier repository experiment stub retained for compatibility</li>
+          <li>reuse the package code, configs, and scripts under the repository license terms</li>
+          <li>preserve attribution and keep repository metadata, including citation details, intact</li>
+          <li>when adapting workflows, document which defaults you changed and why</li>
         </ul>
 
-        <h2>Common structure</h2>
-        <pre><code>experiment:
-  name: synthetic_logistic_vs_ar1
-  mode: synthetic
-
-analysis:
-  threshold_quantile: 0.95
-  run_length: 3
-
-outputs:
-  directory: outputs/synthetic_logistic_vs_ar1</code></pre>
-
-        <h2>Synthetic config sections</h2>
-        <ul>
-          <li><code>experiment.name</code>: run label saved into the output summary</li>
-          <li><code>experiment.mode</code>: should be <code>synthetic</code></li>
-          <li><code>synthetic.systems</code>: list of benchmark systems such as logistic, AR(1), or GARCH</li>
-          <li><code>analysis.threshold_quantile</code>: event threshold definition</li>
-          <li><code>analysis.run_length</code>: declustering gap for the runs estimator</li>
-          <li><code>outputs.directory</code>: output folder for tables, figures, and JSON summary</li>
-        </ul>
-
-        <h2>Empirical config sections</h2>
-        <ul>
-          <li><code>experiment.mode</code>: should be <code>empirical</code></li>
-          <li><code>empirical.input_path</code>: local canonical CSV in long format</li>
-          <li><code>analysis.*</code>: threshold and recurrence settings shared with synthetic runs</li>
-          <li><code>outputs.directory</code>: empirical run output folder</li>
-        </ul>
-
-        <h2>Figure and project defaults</h2>
-        <ul>
-          <li><code>project.seed</code>: reproducibility seed for configurable workflows</li>
-          <li><code>project.output_dir</code>: fallback output directory</li>
-          <li><code>plots.dpi</code>: figure resolution setting</li>
-          <li><code>plots.save_format</code>: default saved figure extension</li>
-        </ul>
-
-        <h2>Useful commands</h2>
-        <pre><code>python -m dynsys_econometrics synthetic --config configs/synthetic.yaml
-python -m dynsys_econometrics empirical --config configs/empirical.yaml
-python scripts/run_experiment.py --config configs/synthetic.yaml</code></pre>
-
-        <h2>Interpretation rule</h2>
+        <h2>Citation expectation</h2>
         <p>
-          Config files make workflows reproducible, but they do not turn
-          synthetic data into empirical evidence. Always distinguish the
-          configured run mode from the claims you make about the outputs.
+          If you reuse the package, article-facing figures, or methodological
+          framing in technical or academic work, cite the repository metadata in
+          <code>CITATION.cff</code> and reference the exact version or commit
+          whenever possible.
         </p>
+
+        <h2>What can be reused safely</h2>
+        <ul>
+          <li>data contracts and normalized schema conventions</li>
+          <li>simulation and diagnostic workflows</li>
+          <li>figure-generation patterns and output traceability structure</li>
+          <li>testing and validation discipline around numerical edge cases</li>
+        </ul>
+
+        <h2>What needs independent justification</h2>
+        <ul>
+          <li>empirical claims based on your own data or thresholds</li>
+          <li>policy or macro-financial interpretations derived from exploratory plots</li>
+          <li>any conclusion that extends beyond the repository's documented guardrails</li>
+        </ul>
+
+        <h2>Practical references</h2>
+        <ul>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/CITATION.cff">Citation metadata</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/LICENSE">License file</a></li>
+          <li><a href="article.html">Article guide</a></li>
+          <li><a href="research.html">Research guardrails</a></li>
+        </ul>
       </section>
     </main>
   </body>
