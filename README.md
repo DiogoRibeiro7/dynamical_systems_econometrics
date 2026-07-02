@@ -17,58 +17,23 @@ Can tools from extreme value theory for dynamical systems improve econometric an
 - Multivariate extremes measure whether stress appears jointly across inflation, unemployment, yields, spreads, exchange rates, and equity returns.
 - Simulated chaotic maps provide controlled examples before applying the method to macro-financial data.
 
-## Repository status
+## Current scope
 
-This is a scaffold-first research repo. It contains:
+The repository currently includes:
 
-- article draft
-- mathematical notes
-- repo architecture
-- implementation skeleton
-- tests
-- coding-agent prompts
-- data contracts
-- notebook plan
+- simulation utilities for iid, AR(1), GARCH(1,1), logistic-map, Pomeau-Manneville, and coupled-map examples
+- rare-event diagnostics for exceedances, block maxima, peaks-over-threshold, runs declustering, extremal-index estimation, and threshold sensitivity
+- return-time and hitting-time diagnostics, including an exponential benchmark comparison
+- free-source data loaders with a standard `date`, `series_id`, `value` schema
+- research notebooks for simulations, recurrence, case-study workflow, multivariate tails, and article figures
+- reproducible figure-generation scripts for the article
+- unit tests, smoke tests, GitHub Actions CI, `ruff`, and `mypy`
 
-The implementation is intentionally lightweight but complete enough for a coding agent to extend safely.
+The repo is designed to support both a technical Medium article and a future formal paper.
 
-## Suggested datasets
+## Quick start
 
-Free sources:
-
-- FRED / ALFRED macroeconomic series
-- OECD data API
-- World Bank indicators
-- ECB Statistical Data Warehouse
-- Yahoo Finance via yfinance for market proxies
-- Stooq for financial time series
-
-## Project structure
-
-```text
-article/                Article draft and references
-configs/                YAML configs for experiments
-data/                   Raw and processed data folders, ignored by git
-notebooks/              Research notebooks
-prompts/                Coding-agent prompts
-scripts/                CLI scripts
-src/dynsys_econometrics Python package
-src/dynsys_econometrics/data.py
-src/dynsys_econometrics/simulation.py
-src/dynsys_econometrics/extremes.py
-src/dynsys_econometrics/return_times.py
-src/dynsys_econometrics/econometrics.py
-src/dynsys_econometrics/plots.py
-tests/                  Unit tests and smoke tests
-```
-
-## Installation
-
-```bash
-poetry install
-```
-
-or
+Create a virtual environment and install the package with dev dependencies:
 
 ```bash
 python -m venv .venv
@@ -76,16 +41,65 @@ source .venv/bin/activate
 pip install -e ".[dev]"
 ```
 
-## First smoke run
+Run the minimal comparison script:
 
 ```bash
 python scripts/run_smoke_experiment.py
-pytest
 ```
+
+Generate the article figure bundle under `article/figures/`:
+
+```bash
+python scripts/generate_article_figures.py
+```
+
+Run the full quality pass:
+
+```bash
+pytest -q
+ruff check .
+mypy
+```
+
+## Data contract
+
+All loaders are normalized to the same long-format schema:
+
+```text
+date, series_id, value
+```
+
+This makes the diagnostics and notebooks agnostic to the original data source.
+
+## Suggested datasets
+
+Free sources:
+
+- FRED / ALFRED macroeconomic series
+- OECD CSV exports
+- World Bank indicators
+- ECB Statistical Data Warehouse
+- Yahoo Finance via yfinance for market proxies
+
+## Project structure
+
+```text
+article/                Article draft, references, and generated figures
+configs/                YAML configs for experiments
+data/                   Raw and processed data folders
+notebooks/              Research notebooks for simulations and empirical workflows
+prompts/                Coding-agent prompts
+scripts/                Smoke experiment and article-figure generation
+src/dynsys_econometrics Python package for simulation, diagnostics, loaders, and plots
+tests/                  Unit tests and smoke tests
+```
+
+## Notebook workflow
+
+The notebook set is described in [notebooks/README.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/notebooks/README.md). Each notebook states its research question and data assumptions explicitly.
 
 ## Article target
 
 Medium article, but written with academic discipline:
 
 > From Chaos to Crisis: Using Milhazes Freitas' Dynamical-Systems Extreme Value Theory in Econometrics
-
