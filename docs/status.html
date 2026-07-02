@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Project Status | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .nav a {
+        display: inline-block;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        text-decoration: none;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="status.html">Status</a>
+          <a href="commands.html">Commands</a>
+          <a href="data.html">Data</a>
+          <a href="configs.html">Configs</a>
+          <a href="methods.html">Methods</a>
+          <a href="troubleshooting.html">Troubleshooting</a>
+          <a href="api.html">API</a>
+          <a href="notebooks.html">Notebooks</a>
+          <a href="workflow.html">Workflow</a>
+          <a href="figures.html">Figures</a>
+          <a href="research.html">Guardrails</a>
+          <a href="reproducibility.html">Reproducibility</a>
+        </nav>
+        <h1>Project status</h1>
+        <p>
+          This page summarizes the current implementation state of the repository
+          as a research package. It is intended as a quick orientation layer
+          between the landing page and the detailed audit/review documents.
+        </p>
+
+        <h2>Implemented</h2>
+        <ul>
+          <li>contracts and config helpers</li>
+          <li>simulation benchmarks for univariate and multivariate stress examples</li>
+          <li>threshold exceedances, runs declustering, and extremal-index diagnostics</li>
+          <li>return-time, recurrence, and survival summaries</li>
+          <li>multivariate joint-stress and stress-state diagnostics</li>
+          <li>offline-first data loading and catalog validation</li>
+          <li>lightweight econometric baselines and alignment helpers</li>
+          <li>experiment orchestration with saved tables, figures, and JSON summaries</li>
+          <li>article figure generation with matching source CSV files</li>
+          <li>public docs site covering commands, configs, data, methods, notebooks, figures, and troubleshooting</li>
+        </ul>
+
+        <h2>Partially implemented</h2>
+        <ul>
+          <li>empirical case-study workflows depend on user-supplied public data in canonical format</li>
+          <li>notebook execution is documented and structured, but not automated in tests</li>
+          <li>the original and prompt-aligned notebook tracks coexist, which is flexible but not fully simplified</li>
+        </ul>
+
+        <h2>Not implemented or intentionally out of scope</h2>
+        <ul>
+          <li>causal identification layer</li>
+          <li>strong structural estimation of a macroeconomic dynamical system</li>
+          <li>claims that observed economies are literal deterministic maps</li>
+          <li>exact crisis-date forecasting from return-time diagnostics</li>
+        </ul>
+
+        <h2>Supporting repository documents</h2>
+        <ul>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/code_audit.md">Code audit</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/final_code_review.md">Final code review</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/github_issue_plan.md">Issue plan</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/article_support_matrix.md">Article support matrix</a></li>
+        </ul>
+
+        <h2>How to use this status page</h2>
+        <p>
+          Use this page to decide whether you need the command map, the data and
+          config guides, the method notes, or the troubleshooting page next. For
+          detailed limitations and supported-claim boundaries, defer to the
+          guardrails pages.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
