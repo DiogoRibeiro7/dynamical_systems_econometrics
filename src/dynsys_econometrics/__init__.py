@@ -14,6 +14,15 @@ from dynsys_econometrics.extremes import (
     threshold_sensitivity_analysis,
 )
 from dynsys_econometrics.return_times import compute_return_times
+from dynsys_econometrics.return_times import (
+    ExponentialComparisonResult,
+    ReturnTimeDistribution,
+    empirical_survival_curve,
+    exponential_benchmark_comparison,
+    first_hitting_time,
+    ks_exponential_diagnostic,
+    return_time_distribution,
+)
 from dynsys_econometrics.simulation import (
     logistic_map,
     simulate_ar1,
@@ -29,6 +38,13 @@ __all__ = [
     "ExceedanceExtractionResult",
     "ThresholdSensitivityResult",
     "compute_return_times",
+    "ExponentialComparisonResult",
+    "ReturnTimeDistribution",
+    "empirical_survival_curve",
+    "exponential_benchmark_comparison",
+    "first_hitting_time",
+    "ks_exponential_diagnostic",
+    "return_time_distribution",
     "block_maxima",
     "estimate_runs_extremal_index",
     "estimate_cluster_size_extremal_index",
