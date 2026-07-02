@@ -98,6 +98,10 @@ tests/                  Unit tests and smoke tests
 
 The notebook set is described in [notebooks/README.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/notebooks/README.md). Each notebook states its research question and data assumptions explicitly.
 
+## Citation
+
+For academic or technical reuse, citation metadata is provided in `CITATION.cff`.
+
 ## Article target
 
 Medium article, but written with academic discipline:

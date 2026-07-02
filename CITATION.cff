@@ -1,0 +1,11 @@
+cff-version: 1.2.0
+title: "Dynamical Systems, Rare Events, and Econometrics"
+message: "If you use this repository, please cite it using the metadata below."
+type: software
+authors:
+  - family-names: Ribeiro
+    given-names: Diogo
+repository-code: "https://github.com/DiogoRibeiro7/dynamical_systems_econometrics"
+license: MIT
+version: 0.1.0
+date-released: 2026-07-02
