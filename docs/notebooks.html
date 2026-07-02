@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Notebook Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 1080px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code {
+        font-family: "Courier New", monospace;
+      }
+
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+
+      .card {
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <p><a href="index.html">Back to project home</a></p>
+        <h1>Notebook guide</h1>
+        <p>
+          The repository currently includes two notebook tracks. One is aligned
+          with the implementation-prompt roadmap. The other is the original
+          research notebook set. Both should call package code rather than
+          embedding reusable analysis logic directly in notebook cells.
+        </p>
+
+        <h2>Prompt-aligned notebook track</h2>
+        <div class="grid">
+          <article class="card">
+            <h2><code>00_method_smoke_test.ipynb</code></h2>
+            <p>Minimal synthetic workflow with exceedances, extremal index, and return times.</p>
+          </article>
+          <article class="card">
+            <h2><code>01_synthetic_dynamics.ipynb</code></h2>
+            <p>Compare logistic-map, AR(1), and GARCH benchmark behavior.</p>
+          </article>
+          <article class="card">
+            <h2><code>02_empirical_data_audit.ipynb</code></h2>
+            <p>Audit a canonical empirical panel or synthetic fallback without making substantive claims.</p>
+          </article>
+          <article class="card">
+            <h2><code>03_rare_events_and_return_times.ipynb</code></h2>
+            <p>Apply exceedance and recurrence diagnostics to one empirical or fallback series.</p>
+          </article>
+          <article class="card">
+            <h2><code>04_multivariate_stress.ipynb</code></h2>
+            <p>Build a joint-stress timeline and stress-state index from multivariate signals.</p>
+          </article>
+          <article class="card">
+            <h2><code>05_econometric_baselines.ipynb</code></h2>
+            <p>Compare event diagnostics with baseline volatility-style summaries.</p>
+          </article>
+        </div>
+
+        <h2>Original notebook track</h2>
+        <div class="grid">
+          <article class="card">
+            <h2><code>01_simulated_systems_extremes.ipynb</code></h2>
+            <p>Original simulation notebook for tail-behavior comparison.</p>
+          </article>
+          <article class="card">
+            <h2><code>02_return_times_and_extremal_index.ipynb</code></h2>
+            <p>Original recurrence and extremal-index notebook.</p>
+          </article>
+          <article class="card">
+            <h2><code>03_macro_financial_stress_case_study.ipynb</code></h2>
+            <p>Original case-study notebook for macro-financial stress analysis.</p>
+          </article>
+          <article class="card">
+            <h2><code>04_multivariate_tail_dependence.ipynb</code></h2>
+            <p>Original notebook for multivariate tail-dependence exploration.</p>
+          </article>
+          <article class="card">
+            <h2><code>05_article_figures.ipynb</code></h2>
+            <p>Original notebook for article-facing visual workflow.</p>
+          </article>
+        </div>
+
+        <h2>Output convention</h2>
+        <p>
+          The prompt-aligned notebooks save outputs under
+          <code>outputs/notebooks/&lt;notebook_name&gt;/</code>. The article-facing
+          figures should still be treated as script-first assets generated by
+          <code>python scripts/generate_article_figures.py</code>.
+        </p>
+
+        <h2>Interpretation rule</h2>
+        <p>
+          Empirical notebooks should frame outputs as descriptive diagnostics of
+          recurrence, clustering, and joint stress. They should not imply causal
+          identification or deterministic-law claims about observed economies.
+        </p>
+
+        <h2>Repository reference</h2>
+        <p>
+          The source notebook index also lives in
+          <a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/notebooks/README.md">notebooks/README.md</a>.
+        </p>
+      </section>
+    </main>
+  </body>
+</html>
