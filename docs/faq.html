@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Data Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>FAQ | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -93,10 +93,6 @@
         background: rgba(255, 253, 248, 0.9);
         text-decoration: none;
       }
-
-      ul {
-        padding-left: 20px;
-      }
     </style>
   </head>
   <body>
@@ -124,68 +120,55 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Data guide</h1>
+        <h1>Frequently asked questions</h1>
+
+        <h2>Is this a library, a paper companion, or a workflow repository?</h2>
         <p>
-          The repository is designed around an offline-first ingestion model with
-          optional public online sources. Core tests should work without internet
-          access, while empirical workflows can be pointed at local canonical
-          CSV files or validated source catalogs.
+          It is all three, but the package layer is the anchor. The repository
+          exposes reusable code, article-facing artifacts, and documented command
+          paths so the research workflow stays inspectable.
         </p>
 
-        <h2>Canonical schema</h2>
-        <pre><code>date,series_id,value,country,frequency,unit,source</code></pre>
+        <h2>Can I run it without external data access?</h2>
         <p>
-          Only <code>date</code>, <code>series_id</code>, and <code>value</code>
-          are required. Optional metadata columns are preserved when present.
+          Yes. The synthetic and smoke workflows are intended to run without live
+          downloads. External public data matters for empirical workflows, not for
+          basic package setup or most validation tasks.
         </p>
 
-        <h2>Supported public-source families</h2>
-        <ul>
-          <li>FRED / ALFRED</li>
-          <li>OECD CSV exports</li>
-          <li>World Bank indicator exports</li>
-          <li>ECB Statistical Data Warehouse</li>
-          <li>Yahoo Finance via <code>yfinance</code></li>
-        </ul>
+        <h2>What should I run first?</h2>
+        <pre><code>pip install -e ".[dev]"
+python -m dynsys_econometrics --help
+python scripts/run_smoke_experiment.py</code></pre>
 
-        <h2>Offline-first workflow</h2>
-        <ul>
-          <li>Store local source files under a project-controlled directory such as <code>data/raw/</code>.</li>
-          <li>Normalize them into the canonical long format.</li>
-          <li>Validate or describe source metadata through <code>data/catalog.example.yaml</code>.</li>
-          <li>Feed the canonical panel into empirical notebooks or experiment configs.</li>
-        </ul>
-
-        <h2>Useful package entry points</h2>
-        <ul>
-          <li><code>load_timeseries_csv</code></li>
-          <li><code>load_panel_from_directory</code></li>
-          <li><code>load_time_series_csv</code></li>
-          <li><code>load_fred</code> / <code>load_fred_csv</code></li>
-          <li><code>load_oecd_csv</code></li>
-          <li><code>load_world_bank_csv</code></li>
-          <li><code>load_ecb_sdw_csv</code></li>
-          <li><code>load_yfinance_series</code></li>
-          <li><code>validate_catalog</code></li>
-          <li><code>write_processed_panel</code></li>
-        </ul>
-
-        <h2>Catalog validation</h2>
-        <pre><code>python -m dynsys_econometrics validate-catalog --catalog data/catalog.example.yaml
-python scripts/fetch_public_data.py --catalog data/catalog.example.yaml</code></pre>
-
-        <h2>Interpretation rule</h2>
+        <h2>Where do the main outputs go?</h2>
         <p>
-          Supported source families and loader contracts do not by themselves
-          imply that a dataset has been used in the article. Only saved outputs
-          from a specific empirical workflow should be treated as evidence.
+          Generated outputs are routed through the configured results and article
+          figure locations. The command map, results page, and article guide
+          explain which artifacts are stable deliverables versus exploratory
+          diagnostics.
         </p>
 
-        <h2>Repository references</h2>
+        <h2>Do passing tests validate the empirical claims?</h2>
+        <p>
+          No. Passing tests improve internal reliability. They do not by
+          themselves justify macro-financial interpretation, threshold choices,
+          or causal language.
+        </p>
+
+        <h2>Can I reuse figures or workflows in my own work?</h2>
+        <p>
+          Yes, subject to license and citation requirements. Reusing software or
+          figure-generation structure is different from reusing substantive
+          conclusions without independent support.
+        </p>
+
+        <h2>Where should I look if something seems inconsistent?</h2>
         <ul>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/data_sources.md">Source documentation</a></li>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/data/catalog.example.yaml">Example catalog</a></li>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/REPRODUCIBILITY.md">Reproducibility manifest</a></li>
+          <li><a href="troubleshooting.html">Troubleshooting</a> for common failure paths</li>
+          <li><a href="validation.html">Validation</a> for quality-check scope</li>
+          <li><a href="research.html">Guardrails</a> for interpretation boundaries</li>
+          <li><a href="workflow.html">Workflow</a> for end-to-end command structure</li>
         </ul>
       </section>
     </main>
