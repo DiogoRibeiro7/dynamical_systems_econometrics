@@ -47,6 +47,18 @@ Run the minimal comparison script:
 python scripts/run_smoke_experiment.py
 ```
 
+Run the configurable synthetic experiment:
+
+```bash
+python scripts/run_experiment.py --config configs/synthetic.yaml
+```
+
+Run the configurable empirical experiment on a local canonical CSV:
+
+```bash
+python scripts/run_experiment.py --config configs/empirical.yaml
+```
+
 Generate the article figure bundle under `article/figures/`:
 
 ```bash
@@ -69,10 +81,22 @@ This repository currently exposes script entry points rather than a package CLI:
   - purpose: compare rare-event clustering in a logistic-map observable and an AR(1) baseline
   - external data required: no
   - outputs: terminal summary only
+- `python scripts/run_experiment.py --config configs/synthetic.yaml`
+  - purpose: run a reproducible synthetic experiment with saved tables, figures, and JSON summary
+  - external data required: no
+  - outputs: `outputs/synthetic_logistic_vs_ar1/`
+- `python scripts/run_experiment.py --config configs/empirical.yaml`
+  - purpose: run a reproducible empirical experiment on a local canonical CSV file
+  - external data required: yes, local CSV configured at `empirical.input_path`
+  - outputs: `outputs/empirical_macro_stress/`
 - `python scripts/generate_article_figures.py`
   - purpose: generate the article figure bundle under `article/figures/`
   - external data required: no, but it will use `data/raw/macro_stress_example.csv` if present
   - outputs: figure PNGs and a terminal summary of generated paths
+- `python scripts/fetch_public_data.py --catalog data/catalog.example.yaml`
+  - purpose: validate the public-data catalog used by the offline/online ingestion layer
+  - external data required: no
+  - outputs: terminal validation summary only
 
 ## Data contract
 
@@ -115,6 +139,14 @@ The notebook set is described in [notebooks/README.md](C:/Users/diogo/work_code/
 
 - Researcher runbook: [docs/runbook.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/docs/runbook.md)
 - Reproducibility manifest: [REPRODUCIBILITY.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/REPRODUCIBILITY.md)
+- Code audit: [docs/code_audit.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/docs/code_audit.md)
+- Final code review: [docs/final_code_review.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/docs/final_code_review.md)
+
+## Limitations
+
+- The dynamical-systems objects in this repository are benchmark processes and diagnostic inspirations, not literal models of whole economies.
+- Extremal-index, recurrence, and multivariate-stress outputs are descriptive. They do not identify causal mechanisms by themselves.
+- Small empirical samples can make threshold-based diagnostics unstable, so threshold sensitivity should be inspected before strong interpretation.
 
 ## Citation
 

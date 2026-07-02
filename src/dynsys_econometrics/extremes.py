@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Sequence
+from typing import Literal, Sequence
 
 import numpy as np
 import pandas as pd
@@ -134,10 +134,12 @@ def extract_threshold_exceedances(
 
 
 def block_maxima(
-    values: FloatArray,
-    block_size: int = 50,
+    values: FloatArray | pd.DataFrame,
+    block_size: int | str = 50,
     drop_incomplete_block: bool = True,
-) -> FloatArray:
+    value_col: str = "value",
+    group_col: str = "series_id",
+) -> FloatArray | pd.DataFrame:
     """Compute block maxima over disjoint blocks.
 
     Parameters
@@ -149,7 +151,55 @@ def block_maxima(
     drop_incomplete_block:
         If True, drop a trailing incomplete block.
     """
+    if isinstance(values, pd.DataFrame):
+        if value_col not in values.columns or group_col not in values.columns or "date" not in values.columns:
+            raise ValueError("DataFrame input must contain date, series_id, and value columns.")
+        frame = values.copy()
+        frame["date"] = pd.to_datetime(frame["date"], errors="raise")
+        frame = frame.sort_values([group_col, "date"]).reset_index(drop=True)
+        output_frames: list[pd.DataFrame] = []
+        for series_id, group in frame.groupby(group_col, sort=True):
+            local = group.reset_index(drop=True)
+            if isinstance(block_size, str):
+                block = (
+                    local.set_index("date")[value_col]
+                    .resample(block_size)
+                    .max()
+                    .dropna()
+                    .reset_index(name="block_max")
+                )
+                block[group_col] = str(series_id)
+                block["block"] = np.arange(len(block), dtype=np.int64)
+                output_frames.append(block[[group_col, "block", "date", "block_max"]])
+            else:
+                _validate_positive_int(block_size, "block_size")
+                n_complete = len(local) // block_size
+                n_blocks = n_complete if drop_incomplete_block else int(np.ceil(len(local) / block_size))
+                rows: list[dict[str, object]] = []
+                for block_id in range(n_blocks):
+                    start = block_id * block_size
+                    stop = min((block_id + 1) * block_size, len(local))
+                    chunk = local.iloc[start:stop]
+                    if chunk.empty:
+                        continue
+                    if drop_incomplete_block and len(chunk) < block_size:
+                        continue
+                    rows.append(
+                        {
+                            group_col: str(series_id),
+                            "block": block_id,
+                            "date": chunk["date"].iloc[0],
+                            "block_max": float(chunk[value_col].max()),
+                        }
+                    )
+                output_frames.append(pd.DataFrame(rows))
+        return pd.concat(output_frames, ignore_index=True) if output_frames else pd.DataFrame(
+            columns=[group_col, "block", "date", "block_max"]
+        )
+
     values_arr = _coerce_numeric_series(values)
+    if not isinstance(block_size, int):
+        raise ValueError("block_size must be an integer for array input.")
     _validate_positive_int(block_size, "block_size")
 
     if drop_incomplete_block:
@@ -361,3 +411,264 @@ def threshold_sensitivity_analysis(
         )
 
     return tuple(results)
+
+
+def threshold_exceedances(
+    df: pd.DataFrame,
+    value_col: str = "value",
+    threshold: float | None = None,
+    quantile: float | None = None,
+    side: Literal["upper", "lower", "two_sided"] = "upper",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Annotate a long-format panel with threshold exceedances.
+
+    Parameters
+    ----------
+    df:
+        Long-format panel containing at least ``date``, ``series_id``, and
+        ``value``.
+    value_col:
+        Numeric value column used to define exceedances.
+    threshold:
+        Fixed numeric threshold shared within each series unless ``quantile`` is
+        used.
+    quantile:
+        Per-series quantile used to compute thresholds. Exactly one of
+        ``threshold`` or ``quantile`` must be provided.
+    side:
+        Tail direction. ``two_sided`` applies the threshold to absolute values
+        and therefore expects a transformed scale where that is meaningful.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Sorted event table with added ``threshold``, ``exceedance``, and
+        ``side`` columns.
+
+    Assumptions
+    -----------
+    Economic series are treated as observed time series whose rare-event
+    structure can be described; the function does not assume they are generated
+    by deterministic maps.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing or threshold arguments are invalid.
+    """
+    required = {"date", group_col, value_col}
+    missing = required.difference(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    if side not in {"upper", "lower", "two_sided"}:
+        raise ValueError("side must be 'upper', 'lower', or 'two_sided'.")
+    if (threshold is None) == (quantile is None):
+        raise ValueError("Provide exactly one of threshold or quantile.")
+    frame = df.copy()
+    frame["date"] = pd.to_datetime(frame["date"], errors="raise")
+    frame[value_col] = pd.to_numeric(frame[value_col], errors="raise")
+    frame = frame.sort_values([group_col, "date"]).reset_index(drop=True)
+    if quantile is not None and not 0.0 < quantile < 1.0:
+        raise ValueError("quantile must lie in the open interval (0, 1).")
+    if threshold is not None and not np.isfinite(threshold):
+        raise ValueError("threshold must be finite.")
+
+    threshold_map: dict[str, float] = {}
+    for series_id, group in frame.groupby(group_col, sort=True):
+        series = group[value_col]
+        if quantile is None:
+            local_threshold = float(threshold)
+        elif side == "upper":
+            local_threshold = float(series.quantile(quantile))
+        elif side == "lower":
+            local_threshold = float(series.quantile(1.0 - quantile))
+        else:
+            local_threshold = float(series.abs().quantile(quantile))
+        threshold_map[str(series_id)] = local_threshold
+
+    frame["threshold"] = frame[group_col].astype(str).map(threshold_map).astype(float)
+    if side == "upper":
+        frame["exceedance"] = frame[value_col] >= frame["threshold"]
+    elif side == "lower":
+        frame["exceedance"] = frame[value_col] <= frame["threshold"]
+    else:
+        frame["exceedance"] = frame[value_col].abs() >= frame["threshold"]
+    frame["side"] = side
+    return frame
+
+
+def assign_runs(
+    events: pd.DataFrame,
+    run_length: int,
+    date_col: str = "date",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Assign run identifiers to exceedance events in a sorted event table.
+
+    Parameters
+    ----------
+    events:
+        Event table containing an ``exceedance`` boolean column.
+    run_length:
+        Number of non-exceedance observations required to close a cluster.
+    date_col:
+        Event date column.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Copy of the input with a nullable integer ``run_id`` column.
+
+    Assumptions
+    -----------
+    Clustering is defined in observation space: gaps are counted as numbers of
+    observations between exceedances after sorting by ``group_col`` and
+    ``date_col``.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing or ``run_length`` is invalid.
+    """
+    _run_length_validation(run_length)
+    required = {date_col, group_col, "exceedance"}
+    missing = required.difference(events.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    frame = events.copy()
+    frame[date_col] = pd.to_datetime(frame[date_col], errors="raise")
+    frame = frame.sort_values([group_col, date_col]).reset_index(drop=True)
+    run_ids = pd.Series(pd.NA, index=frame.index, dtype="Int64")
+    for _, indexer in frame.groupby(group_col, sort=True).groups.items():
+        local_index = list(indexer)
+        exceed_positions = [pos for pos, idx in enumerate(local_index) if bool(frame.at[idx, "exceedance"])]
+        if not exceed_positions:
+            continue
+        current_run = 0
+        run_ids.at[local_index[exceed_positions[0]]] = current_run
+        previous_position = exceed_positions[0]
+        for position in exceed_positions[1:]:
+            if position - previous_position > run_length:
+                current_run += 1
+            run_ids.at[local_index[position]] = current_run
+            previous_position = position
+    frame["run_id"] = run_ids
+    return frame
+
+
+def runs_extremal_index(
+    events: pd.DataFrame,
+    run_length: int,
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Summarize a runs-based extremal-index diagnostic by series.
+
+    Parameters
+    ----------
+    events:
+        Event table with an ``exceedance`` boolean column and one row per
+        observation.
+    run_length:
+        Number of non-exceedance observations required to separate clusters.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Tidy summary with observation counts, exceedance counts, cluster counts,
+        run length, and the runs extremal-index estimate.
+
+    Assumptions
+    -----------
+    The returned extremal index is descriptive and should not be interpreted
+    mechanically in short empirical samples.
+
+    Raises
+    ------
+    ValueError
+        If the input event table is malformed.
+    """
+    assigned = assign_runs(events, run_length=run_length, group_col=group_col)
+    rows: list[dict[str, object]] = []
+    for series_id, group in assigned.groupby(group_col, sort=True):
+        n_observations = int(len(group))
+        exceedances = group[group["exceedance"]]
+        n_exceedances = int(len(exceedances))
+        n_clusters = int(exceedances["run_id"].nunique()) if n_exceedances else 0
+        extremal_index = float(n_clusters / n_exceedances) if n_exceedances else float("nan")
+        rows.append(
+            {
+                group_col: str(series_id),
+                "n_observations": n_observations,
+                "n_exceedances": n_exceedances,
+                "n_clusters": n_clusters,
+                "run_length": run_length,
+                "extremal_index": extremal_index,
+            }
+        )
+    return pd.DataFrame(rows)
+
+
+def mean_excess_table(
+    df: pd.DataFrame,
+    quantiles: Sequence[float],
+    value_col: str = "value",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Compute a mean-excess table across threshold quantiles.
+
+    Parameters
+    ----------
+    df:
+        Long-format panel containing ``series_id`` and ``value``.
+    quantiles:
+        Threshold quantiles at which to compute mean excesses.
+    value_col:
+        Numeric value column.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary with ``series_id``, ``quantile``, ``threshold``,
+        ``n_exceedances``, and ``mean_excess``.
+
+    Raises
+    ------
+    ValueError
+        If the input frame or quantiles are invalid.
+    """
+    if not quantiles:
+        raise ValueError("quantiles must be non-empty.")
+    if any((q <= 0.0) or (q >= 1.0) for q in quantiles):
+        raise ValueError("All quantiles must lie in the open interval (0, 1).")
+    required = {group_col, value_col}
+    missing = required.difference(df.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    frame = df.copy()
+    frame[value_col] = pd.to_numeric(frame[value_col], errors="raise")
+    rows: list[dict[str, object]] = []
+    for series_id, group in frame.groupby(group_col, sort=True):
+        values = group[value_col]
+        for quantile in quantiles:
+            threshold = float(values.quantile(quantile))
+            exceedances = values[values >= threshold]
+            mean_excess = float((exceedances - threshold).mean()) if not exceedances.empty else float("nan")
+            rows.append(
+                {
+                    group_col: str(series_id),
+                    "quantile": float(quantile),
+                    "threshold": threshold,
+                    "n_exceedances": int(len(exceedances)),
+                    "mean_excess": mean_excess,
+                }
+            )
+    return pd.DataFrame(rows)

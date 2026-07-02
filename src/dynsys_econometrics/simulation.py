@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+import json
+
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 
 FloatArray = NDArray[np.float64]
@@ -59,6 +62,92 @@ def logistic_map(
         values[idx] = r * values[idx - 1] * (1.0 - values[idx - 1])
 
     return values[burn_in:]
+
+
+def _simulation_frame(
+    values: FloatArray,
+    *,
+    series_id: str,
+    system: str,
+    parameter_set: dict[str, float | int | None],
+) -> pd.DataFrame:
+    """Build a long-format simulation frame compatible with repository contracts."""
+    dates = pd.date_range("2000-01-31", periods=values.size, freq="ME")
+    return pd.DataFrame(
+        {
+            "date": dates,
+            "series_id": series_id,
+            "value": values,
+            "system": system,
+            "parameter_set": json.dumps(parameter_set, sort_keys=True),
+            "step": np.arange(values.size, dtype=np.int64),
+        }
+    )
+
+
+def simulate_logistic_map(
+    n: int,
+    r: float = 4.0,
+    x0: float = 0.123,
+    burn_in: int = 100,
+    noise_std: float = 0.0,
+    seed: int | None = None,
+) -> pd.DataFrame:
+    """Simulate a logistic map and return a long-format DataFrame.
+
+    Parameters
+    ----------
+    n:
+        Number of retained observations after burn-in.
+    r:
+        Logistic-map parameter in ``(0, 4]``.
+    x0:
+        Initial state in ``(0, 1)``.
+    burn_in:
+        Number of discarded transient iterations.
+    noise_std:
+        Optional observational noise standard deviation. This perturbs the
+        observed series but does not claim to model a realistic economy.
+    seed:
+        Optional seed used only when ``noise_std`` is positive.
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-format simulation frame with ``date``, ``series_id``, ``value``,
+        ``system``, ``parameter_set``, and ``step`` columns.
+
+    Assumptions
+    -----------
+    The logistic map is used as a benchmark for nonlinear recurrence, not as a
+    literal model of a macroeconomy.
+
+    Raises
+    ------
+    ValueError
+        If inputs violate the supported parameter bounds.
+    """
+    if noise_std < 0.0:
+        raise ValueError("noise_std must be non-negative.")
+    base = logistic_map(n_steps=n, x0=x0, r=r, burn_in=burn_in)
+    if noise_std > 0.0:
+        rng = np.random.default_rng(seed)
+        observed = base + rng.normal(scale=noise_std, size=base.size)
+    else:
+        observed = base
+    return _simulation_frame(
+        observed.astype(np.float64, copy=False),
+        series_id="logistic_map",
+        system="logistic_map",
+        parameter_set={
+            "n": n,
+            "r": r,
+            "x0": x0,
+            "burn_in": burn_in,
+            "noise_std": noise_std,
+            "seed": seed,
+        },
+    )
 
 
 def simulate_iid_gaussian(
@@ -238,6 +327,51 @@ def simulate_pomeau_manneville(
         values[idx] = (values[idx - 1] + a * (values[idx - 1] ** z)) % 1.0
 
     return values[burn_in:]
+
+
+def simulate_intermittent_map(
+    n: int,
+    alpha: float,
+    x0: float = 0.123,
+    burn_in: int = 100,
+) -> pd.DataFrame:
+    """Simulate an intermittent benchmark map and return a long-format frame.
+
+    Parameters
+    ----------
+    n:
+        Number of retained observations after burn-in.
+    alpha:
+        Intermittency parameter. Internally this is mapped to a
+        Pomeau-Manneville exponent of ``1 + alpha``.
+    x0:
+        Initial state in ``(0, 1)``.
+    burn_in:
+        Number of discarded transient iterations.
+
+    Returns
+    -------
+    pd.DataFrame
+        Long-format simulation frame.
+
+    Assumptions
+    -----------
+    This benchmark is used to study clustered recurrence near neutral regions.
+
+    Raises
+    ------
+    ValueError
+        If ``alpha`` is not strictly positive.
+    """
+    if alpha <= 0.0:
+        raise ValueError("alpha must be strictly positive.")
+    values = simulate_pomeau_manneville(n_steps=n, x0=x0, a=1.0, z=1.0 + alpha, burn_in=burn_in)
+    return _simulation_frame(
+        values,
+        series_id="intermittent_map",
+        system="intermittent_map",
+        parameter_set={"n": n, "alpha": alpha, "x0": x0, "burn_in": burn_in},
+    )
 
 
 def simulate_coupled_logistic_maps(

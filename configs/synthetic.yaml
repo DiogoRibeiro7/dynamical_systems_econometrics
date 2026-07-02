@@ -1,0 +1,24 @@
+experiment:
+  name: synthetic_logistic_vs_ar1
+  mode: synthetic
+  seed: 42
+
+synthetic:
+  systems:
+    - name: logistic
+      n: 2000
+      r: 4.0
+      x0: 0.17
+      burn_in: 100
+    - name: ar1
+      n: 2000
+      phi: 0.8
+      sigma: 1.0
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 100
+
+outputs:
+  directory: outputs/synthetic_logistic_vs_ar1

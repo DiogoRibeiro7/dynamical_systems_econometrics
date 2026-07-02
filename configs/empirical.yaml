@@ -1,0 +1,15 @@
+experiment:
+  name: empirical_macro_stress
+  mode: empirical
+  seed: 42
+
+empirical:
+  input_path: data/raw/macro_stress_example.csv
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 100
+
+outputs:
+  directory: outputs/empirical_macro_stress

@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from typing import Sequence
 
 import numpy as np
+import pandas as pd
 from numpy.typing import NDArray
 from scipy.stats import expon, kstest
 
@@ -208,3 +209,271 @@ def ks_exponential_diagnostic(
         benchmark.ks_pvalue < alpha,
         benchmark.n,
     )
+
+
+def _validate_event_table(
+    events: pd.DataFrame,
+    *,
+    date_col: str,
+    event_col: str,
+    group_col: str,
+) -> pd.DataFrame:
+    """Validate a long-format event table for recurrence diagnostics."""
+    required = {date_col, event_col, group_col}
+    missing = required.difference(events.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    frame = events.copy()
+    frame[date_col] = pd.to_datetime(frame[date_col], errors="ignore")
+    frame[event_col] = frame[event_col].astype(bool)
+    frame = frame.sort_values([group_col, date_col]).reset_index(drop=True)
+    return frame
+
+
+def inter_event_durations(
+    events: pd.DataFrame,
+    date_col: str = "date",
+    event_col: str = "exceedance",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Compute durations between consecutive event dates.
+
+    Parameters
+    ----------
+    events:
+        Event table containing one row per observation and a boolean event flag.
+    date_col:
+        Date or step-like column.
+    event_col:
+        Boolean event indicator column.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Duration table with ``series_id``, ``event_date``,
+        ``previous_event_date``, ``duration``, and ``unit``.
+
+    Assumptions
+    -----------
+    The function computes event-level durations unless the input has already
+    been aggregated to one row per cluster.
+
+    Raises
+    ------
+    ValueError
+        If the required event table columns are missing.
+    """
+    frame = _validate_event_table(events, date_col=date_col, event_col=event_col, group_col=group_col)
+    rows: list[dict[str, object]] = []
+    for series_id, group in frame.groupby(group_col, sort=True):
+        active = group[group[event_col]].copy()
+        if len(active) < 2:
+            continue
+        dates = active[date_col]
+        if pd.api.types.is_datetime64_any_dtype(dates):
+            deltas = dates.diff().dt.days
+            unit = "days"
+        else:
+            deltas = pd.to_numeric(dates, errors="raise").diff()
+            unit = "steps"
+        for idx in range(1, len(active)):
+            rows.append(
+                {
+                    group_col: str(series_id),
+                    "event_date": active.iloc[idx][date_col],
+                    "previous_event_date": active.iloc[idx - 1][date_col],
+                    "duration": float(deltas.iloc[idx]),
+                    "unit": unit,
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def return_times(
+    events: pd.DataFrame,
+    date_col: str = "date",
+    event_col: str = "exceedance",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Return inter-event durations in tidy long format.
+
+    Parameters
+    ----------
+    events:
+        Event table containing a boolean event indicator.
+    date_col:
+        Event date column.
+    event_col:
+        Event indicator column.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Tidy duration table.
+
+    Assumptions
+    -----------
+    The input is event-level data unless the caller explicitly aggregates to
+    clusters first.
+
+    Raises
+    ------
+    ValueError
+        If the event table is malformed.
+    """
+    return inter_event_durations(events, date_col=date_col, event_col=event_col, group_col=group_col)
+
+
+def recurrence_rate(
+    events: pd.DataFrame,
+    window: int | str,
+    date_col: str = "date",
+    event_col: str = "exceedance",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Compute rolling or resampled recurrence counts by series.
+
+    Parameters
+    ----------
+    events:
+        Event table with a boolean event flag.
+    window:
+        Integer observation window or a pandas offset string such as ``"90D"``.
+    date_col:
+        Date column.
+    event_col:
+        Event indicator column.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Table with event counts by date and series.
+
+    Raises
+    ------
+    ValueError
+        If ``window`` is invalid for the supplied date type.
+    """
+    frame = _validate_event_table(events, date_col=date_col, event_col=event_col, group_col=group_col)
+    outputs: list[pd.DataFrame] = []
+    for series_id, group in frame.groupby(group_col, sort=True):
+        local = group.copy()
+        if isinstance(window, int):
+            if window <= 0:
+                raise ValueError("window must be positive.")
+            local["event_count"] = local[event_col].astype(int).rolling(window=window, min_periods=1).sum()
+            local["window"] = str(window)
+            local["unit"] = "observations"
+            outputs.append(local[[group_col, date_col, "event_count", "window", "unit"]])
+        else:
+            local[date_col] = pd.to_datetime(local[date_col], errors="raise")
+            resampled = (
+                local.set_index(date_col)[event_col]
+                .resample(window)
+                .sum()
+                .reset_index(name="event_count")
+            )
+            resampled[group_col] = str(series_id)
+            resampled["window"] = window
+            resampled["unit"] = "calendar"
+            outputs.append(resampled[[group_col, date_col, "event_count", "window", "unit"]])
+    return pd.concat(outputs, ignore_index=True) if outputs else pd.DataFrame(
+        columns=[group_col, date_col, "event_count", "window", "unit"]
+    )
+
+
+def survival_curve(
+    durations: pd.DataFrame,
+    duration_col: str = "duration",
+    group_col: str = "series_id",
+) -> pd.DataFrame:
+    """Estimate an empirical survival curve for return-time durations.
+
+    Parameters
+    ----------
+    durations:
+        Duration table containing at least ``series_id`` and ``duration``.
+    duration_col:
+        Positive duration column.
+    group_col:
+        Series identifier column.
+
+    Returns
+    -------
+    pd.DataFrame
+        Survival-curve table with ``duration``, ``survival_probability``, and
+        ``n_at_risk`` by series.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing or durations are invalid.
+    """
+    required = {group_col, duration_col}
+    missing = required.difference(durations.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    rows: list[dict[str, object]] = []
+    for series_id, group in durations.groupby(group_col, sort=True):
+        values = pd.to_numeric(group[duration_col], errors="raise").to_numpy(dtype=np.float64)
+        if values.size == 0:
+            continue
+        if np.any(values <= 0.0):
+            raise ValueError("duration values must be strictly positive.")
+        unique_values, counts = np.unique(values, return_counts=True)
+        at_risk = np.flip(np.cumsum(np.flip(counts.astype(np.int64))))
+        survival = at_risk / at_risk[0]
+        for duration_value, n_risk, probability in zip(unique_values, at_risk, survival, strict=True):
+            rows.append(
+                {
+                    group_col: str(series_id),
+                    "duration": float(duration_value),
+                    "survival_probability": float(probability),
+                    "n_at_risk": int(n_risk),
+                }
+            )
+    return pd.DataFrame(rows)
+
+
+def compare_return_time_distributions(
+    durations: pd.DataFrame,
+    group_col: str,
+    regime_col: str,
+) -> pd.DataFrame:
+    """Summarize return-time distributions by series and regime label.
+
+    Parameters
+    ----------
+    durations:
+        Duration table containing a ``duration`` column and a regime label.
+    group_col:
+        Series identifier column.
+    regime_col:
+        Regime label column supplied by the caller.
+
+    Returns
+    -------
+    pd.DataFrame
+        Summary statistics by series and regime.
+
+    Raises
+    ------
+    ValueError
+        If required columns are missing.
+    """
+    required = {group_col, regime_col, "duration"}
+    missing = required.difference(durations.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    summary = (
+        durations.groupby([group_col, regime_col], dropna=False)["duration"]
+        .agg(["count", "mean", "median", "std", "min", "max"])
+        .reset_index()
+    )
+    return summary.rename(columns={"count": "n_durations"})

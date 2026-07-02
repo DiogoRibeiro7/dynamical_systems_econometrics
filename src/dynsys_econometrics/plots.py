@@ -245,3 +245,107 @@ def plot_multivariate_stress_heatmap(
     fig.subplots_adjust(left=0.12, right=0.92, bottom=0.12, top=0.90)
     fig.savefig(path, dpi=160)
     plt.close(fig)
+
+
+def plot_time_series_with_exceedances(
+    series: pd.Series,
+    threshold: float,
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a time series with exceedances highlighted and return figure objects."""
+    validated = _validate_numeric_series(series, "series")
+    fig: plt.Figure
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 4))
+    else:
+        fig = ax.figure
+    exceedances = validated >= threshold
+    validated.plot(ax=ax, color="#4c78a8", linewidth=1.0)
+    ax.scatter(validated.index[exceedances], validated[exceedances], color="#e45756", s=16)
+    ax.axhline(threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
+    ax.set_title("Time series with exceedances")
+    ax.set_xlabel("date" if isinstance(validated.index, pd.DatetimeIndex) else "time")
+    ax.set_ylabel(_series_label(validated))
+    return fig, ax
+
+
+def plot_extremal_index_bars(
+    table: pd.DataFrame,
+    *,
+    series_col: str = "series_id",
+    value_col: str = "extremal_index",
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot extremal-index estimates as a bar chart."""
+    required = {series_col, value_col}
+    missing = required.difference(table.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    fig: plt.Figure
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(9, 4))
+    else:
+        fig = ax.figure
+    ax.bar(table[series_col].astype(str), table[value_col].astype(float), color="#72b7b2")
+    ax.set_title("Extremal index by series")
+    ax.set_xlabel("series")
+    ax.set_ylabel("extremal index")
+    return fig, ax
+
+
+def plot_joint_stress_timeline(
+    table: pd.DataFrame,
+    *,
+    date_col: str = "date",
+    score_col: str = "stress_score",
+    active_col: str = "joint_exceedance",
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a multivariate stress score through time."""
+    required = {date_col, score_col, active_col}
+    missing = required.difference(table.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    fig: plt.Figure
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 4))
+    else:
+        fig = ax.figure
+    dates = pd.to_datetime(table[date_col], errors="raise")
+    scores = pd.to_numeric(table[score_col], errors="raise")
+    active = table[active_col].astype(bool)
+    ax.plot(dates, scores, color="#4c78a8", linewidth=1.0)
+    ax.scatter(dates[active], scores[active], color="#e45756", s=16)
+    ax.set_title("Joint stress timeline")
+    ax.set_xlabel("date")
+    ax.set_ylabel("stress score")
+    return fig, ax
+
+
+def plot_baseline_comparison(
+    table: pd.DataFrame,
+    *,
+    x_col: str = "date",
+    event_col: str = "exceedance",
+    baseline_col: str = "rolling_volatility",
+    ax: plt.Axes | None = None,
+) -> tuple[plt.Figure, plt.Axes]:
+    """Plot a baseline diagnostic against rare-event indicators."""
+    required = {x_col, event_col, baseline_col}
+    missing = required.difference(table.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
+    fig: plt.Figure
+    if ax is None:
+        fig, ax = plt.subplots(figsize=(10, 4))
+    else:
+        fig = ax.figure
+    x_values = table[x_col]
+    baseline = pd.to_numeric(table[baseline_col], errors="raise")
+    active = table[event_col].astype(bool)
+    ax.plot(x_values, baseline, color="#4c78a8", linewidth=1.0)
+    ax.scatter(pd.Series(x_values)[active], baseline[active], color="#e45756", s=14)
+    ax.set_title("Econometric baseline versus event diagnostics")
+    ax.set_xlabel(str(x_col))
+    ax.set_ylabel(str(baseline_col))
+    return fig, ax

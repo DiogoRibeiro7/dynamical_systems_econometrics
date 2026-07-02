@@ -1,0 +1,15 @@
+project:
+  seed: 42
+  output_dir: outputs/default
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 100
+
+plots:
+  dpi: 160
+  save_format: png
+
+outputs:
+  directory: outputs/default

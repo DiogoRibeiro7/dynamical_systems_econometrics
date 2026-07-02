@@ -1,0 +1,4 @@
+figures:
+  output_dir: article/figures
+  dpi: 160
+  save_format: png

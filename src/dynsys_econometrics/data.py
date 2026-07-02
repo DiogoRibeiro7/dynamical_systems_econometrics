@@ -11,6 +11,9 @@ from urllib.request import Request, urlopen
 import pandas as pd
 from pandas import DataFrame
 from pandas.errors import ParserError
+import yaml
+
+from dynsys_econometrics.contracts import TimeSeriesFrame
 
 
 _SUPPORTED_YEAR_COLUMNS = tuple(str(year) for year in range(1900, 2201))
@@ -389,3 +392,61 @@ def load_yfinance_series(
 
     combined = pd.concat(outputs, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True)
     return cast(DataFrame, combined)
+
+
+def load_timeseries_csv(path: str | Path, *, allow_missing: bool = False) -> TimeSeriesFrame:
+    """Load a canonical long-format CSV into a validated time-series contract."""
+    frame = _load_csv_to_frame(path)
+    return TimeSeriesFrame(frame=frame, allow_missing=allow_missing)
+
+
+def load_panel_from_directory(path: str | Path, pattern: str = "*.csv") -> TimeSeriesFrame:
+    """Load and concatenate multiple long-format CSV files from a directory."""
+    directory = Path(path)
+    if not directory.exists():
+        raise FileNotFoundError(f"Directory not found: {directory}")
+    files = sorted(directory.glob(pattern))
+    if not files:
+        raise DataLoadFailure(f"No files matched pattern '{pattern}' in {directory}.")
+    frames = [load_timeseries_csv(file_path).to_frame() for file_path in files]
+    combined = pd.concat(frames, ignore_index=True)
+    return TimeSeriesFrame(frame=combined)
+
+
+def write_processed_panel(frame: TimeSeriesFrame | DataFrame, path: str | Path) -> None:
+    """Write a validated processed panel to CSV."""
+    output_path = Path(path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    data = frame.to_frame() if isinstance(frame, TimeSeriesFrame) else TimeSeriesFrame(frame=frame).to_frame()
+    data.to_csv(output_path, index=False)
+
+
+def validate_catalog(path: str | Path) -> dict[str, object]:
+    """Validate a YAML data catalog and return a compact summary."""
+    catalog_path = Path(path)
+    if not catalog_path.exists():
+        raise FileNotFoundError(f"Catalog not found: {catalog_path}")
+    payload = yaml.safe_load(catalog_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise DataLoadFailure("Catalog must be a mapping.")
+    series = payload.get("series", [])
+    if not isinstance(series, list):
+        raise DataLoadFailure("Catalog field 'series' must be a list.")
+    required = {"series_id", "description", "source"}
+    errors: list[str] = []
+    sources: set[str] = set()
+    for idx, entry in enumerate(series):
+        if not isinstance(entry, dict):
+            errors.append(f"Entry {idx} is not a mapping.")
+            continue
+        missing = required.difference(entry)
+        if missing:
+            errors.append(f"Entry {idx} missing fields: {sorted(missing)}")
+        else:
+            sources.add(str(entry["source"]))
+    return {
+        "n_series": len(series),
+        "sources": sorted(sources),
+        "valid": len(errors) == 0,
+        "errors": errors,
+    }
