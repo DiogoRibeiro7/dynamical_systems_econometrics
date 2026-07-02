@@ -34,6 +34,18 @@ def test_generate_article_figures_writes_expected_bundle(tmp_path, monkeypatch) 
 
     output_dir = tmp_path / "article" / "figures"
     expected_files = {
+        "01_conceptual_pipeline.png",
+        "01_conceptual_pipeline_source.csv",
+        "02_synthetic_extremes_comparison.png",
+        "02_synthetic_extremes_comparison_source.csv",
+        "03_return_time_distribution.png",
+        "03_return_time_distribution_source.csv",
+        "04_extremal_index_by_series.png",
+        "04_extremal_index_by_series_source.csv",
+        "05_multivariate_stress_timeline.png",
+        "05_multivariate_stress_timeline_source.csv",
+        "06_econometric_vs_recurrence_diagnostics.png",
+        "06_econometric_vs_recurrence_diagnostics_source.csv",
         "simulated_orbit_and_observable.png",
         "simulated_orbit_and_observable_source.csv",
         "threshold_exceedances.png",

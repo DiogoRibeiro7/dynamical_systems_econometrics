@@ -8,10 +8,17 @@ import numpy as np
 import pandas as pd
 
 from dynsys_econometrics.data import load_time_series_csv
+from dynsys_econometrics.baselines import rolling_volatility
+from dynsys_econometrics.econometrics import compare_event_diagnostics
 from dynsys_econometrics.extremes import estimate_runs_extremal_index, threshold_sensitivity_analysis
+from dynsys_econometrics.multivariate import stress_state_index
 from dynsys_econometrics.plots import (
+    plot_baseline_comparison,
     plot_clustered_vs_isolated_extremes,
+    plot_conceptual_pipeline,
+    plot_extremal_index_bars,
     plot_extremal_index_by_threshold,
+    plot_joint_stress_timeline,
     plot_macro_financial_timeline,
     plot_multivariate_stress_heatmap,
     plot_orbit_and_observable,
@@ -74,6 +81,25 @@ def main() -> None:
     output_dir = repo_root / "article" / "figures"
     output_dir.mkdir(parents=True, exist_ok=True)
 
+    pipeline_stages = [
+        "Raw economic series",
+        "Transformations",
+        "Stress region definition",
+        "Exceedance events",
+        "Clustering diagnostics",
+        "Return-time diagnostics",
+        "Econometric baselines",
+        "Article evidence",
+    ]
+    pd.DataFrame({"stage_order": np.arange(1, len(pipeline_stages) + 1), "stage": pipeline_stages}).to_csv(
+        output_dir / "01_conceptual_pipeline_source.csv",
+        index=False,
+    )
+    plot_conceptual_pipeline(
+        stages=pipeline_stages,
+        output_path=output_dir / "01_conceptual_pipeline.png",
+    )
+
     orbit = logistic_map(n_steps=5000, x0=0.17, r=4.0)
     observable = -np.log(np.abs(orbit - 0.5) + 1e-12)
     pd.DataFrame(
@@ -128,6 +154,24 @@ def main() -> None:
         isolated_threshold=isolated_threshold,
         output_path=output_dir / "clustered_vs_isolated_extremes.png",
     )
+    pd.DataFrame(
+        {
+            "step": np.arange(600, dtype=int),
+            "clustered_value": clustered_series.iloc[:600].to_numpy(),
+            "clustered_threshold": clustered_threshold,
+            "clustered_exceedance": (clustered_series.iloc[:600] > clustered_threshold).to_numpy(),
+            "isolated_value": isolated_series.iloc[:600].to_numpy(),
+            "isolated_threshold": isolated_threshold,
+            "isolated_exceedance": (isolated_series.iloc[:600] > isolated_threshold).to_numpy(),
+        }
+    ).to_csv(output_dir / "02_synthetic_extremes_comparison_source.csv", index=False)
+    plot_clustered_vs_isolated_extremes(
+        clustered_series=clustered_series.iloc[:600],
+        isolated_series=isolated_series.iloc[:600],
+        clustered_threshold=clustered_threshold,
+        isolated_threshold=isolated_threshold,
+        output_path=output_dir / "02_synthetic_extremes_comparison.png",
+    )
 
     return_times = compute_return_times(observable, threshold=float(np.quantile(observable, 0.95)))
     pd.DataFrame({"return_time": return_times}).to_csv(
@@ -137,6 +181,14 @@ def main() -> None:
     plot_return_time_distribution(
         return_times=return_times,
         output_path=output_dir / "return_time_distribution.png",
+    )
+    pd.DataFrame({"return_time": return_times}).to_csv(
+        output_dir / "03_return_time_distribution_source.csv",
+        index=False,
+    )
+    plot_return_time_distribution(
+        return_times=return_times,
+        output_path=output_dir / "03_return_time_distribution.png",
     )
 
     sensitivity = threshold_sensitivity_analysis(
@@ -159,6 +211,20 @@ def main() -> None:
         theta_values=[row.theta_runs for row in sensitivity],
         output_path=output_dir / "extremal_index_by_threshold.png",
     )
+    extremal_index_table = pd.DataFrame(
+        {
+            "series_id": ["logistic_observable", "clustered_stress", "isolated_stress"],
+            "extremal_index": [
+                estimate_runs_extremal_index(observable, threshold_quantile=0.95, run_length=4).theta_hat,
+                estimate_runs_extremal_index(clustered_values, threshold_quantile=0.95, run_length=4).theta_hat,
+                estimate_runs_extremal_index(isolated_values, threshold_quantile=0.95, run_length=4).theta_hat,
+            ],
+        }
+    )
+    extremal_index_table.to_csv(output_dir / "04_extremal_index_by_series_source.csv", index=False)
+    fig, _ = plot_extremal_index_bars(extremal_index_table)
+    fig.tight_layout()
+    fig.savefig(output_dir / "04_extremal_index_by_series.png", dpi=160)
 
     macro_series = _build_macro_stress_series(repo_root)
     macro_threshold = float(macro_series.quantile(0.95))
@@ -188,8 +254,46 @@ def main() -> None:
         frame=heatmap_frame,
         output_path=output_dir / "multivariate_stress_heatmap.png",
     )
+    threshold_mask = heatmap_frame.ge(heatmap_frame.quantile(0.85), axis=1).reset_index(drop=True)
+    threshold_mask.insert(0, "date", pd.date_range("2000-01-31", periods=len(threshold_mask), freq="5ME"))
+    stress_timeline = stress_state_index(threshold_mask)
+    stress_timeline["joint_exceedance"] = stress_timeline["n_active"] >= 2
+    stress_timeline.to_csv(output_dir / "05_multivariate_stress_timeline_source.csv", index=False)
+    fig, _ = plot_joint_stress_timeline(stress_timeline)
+    fig.tight_layout()
+    fig.savefig(output_dir / "05_multivariate_stress_timeline.png", dpi=160)
+
+    baseline_panel = pd.DataFrame(
+        {
+            "date": pd.date_range("2000-01-31", periods=clustered_series.size, freq="ME"),
+            "series_id": "clustered_stress",
+            "value": clustered_series.to_numpy(),
+        }
+    )
+    baseline_events = pd.DataFrame(
+        {
+            "date": baseline_panel["date"],
+            "series_id": baseline_panel["series_id"],
+            "exceedance": baseline_panel["value"] >= clustered_threshold,
+        }
+    )
+    baseline_summary = rolling_volatility(baseline_panel, window=24)
+    comparison = compare_event_diagnostics(
+        baseline_events,
+        baseline_summary[["date", "series_id", "rolling_volatility"]],
+    )
+    comparison.to_csv(output_dir / "06_econometric_vs_recurrence_diagnostics_source.csv", index=False)
+    fig, _ = plot_baseline_comparison(comparison)
+    fig.tight_layout()
+    fig.savefig(output_dir / "06_econometric_vs_recurrence_diagnostics.png", dpi=160)
 
     summary_paths = [
+        output_dir / "01_conceptual_pipeline.png",
+        output_dir / "02_synthetic_extremes_comparison.png",
+        output_dir / "03_return_time_distribution.png",
+        output_dir / "04_extremal_index_by_series.png",
+        output_dir / "05_multivariate_stress_timeline.png",
+        output_dir / "06_econometric_vs_recurrence_diagnostics.png",
         output_dir / "simulated_orbit_and_observable.png",
         output_dir / "threshold_exceedances.png",
         output_dir / "clustered_vs_isolated_extremes.png",

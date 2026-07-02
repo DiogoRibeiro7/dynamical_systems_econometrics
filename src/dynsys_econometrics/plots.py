@@ -349,3 +349,41 @@ def plot_baseline_comparison(
     ax.set_xlabel(str(x_col))
     ax.set_ylabel(str(baseline_col))
     return fig, ax
+
+
+def plot_conceptual_pipeline(
+    stages: list[str],
+    output_path: str | Path,
+) -> None:
+    """Render a conceptual pipeline diagram for article-facing documentation."""
+    if len(stages) == 0:
+        raise ValueError("stages must be non-empty.")
+    path = _ensure_parent_dir(output_path)
+    fig, ax = plt.subplots(figsize=(12, 3))
+    ax.axis("off")
+    n = len(stages)
+    xs = np.linspace(0.08, 0.92, n)
+    for idx, (x_pos, stage) in enumerate(zip(xs, stages, strict=True)):
+        ax.text(
+            x_pos,
+            0.5,
+            stage,
+            ha="center",
+            va="center",
+            fontsize=10,
+            bbox={"boxstyle": "round,pad=0.35", "facecolor": "#fff7ec", "edgecolor": "#c45b12"},
+            transform=ax.transAxes,
+        )
+        if idx < n - 1:
+            ax.annotate(
+                "",
+                xy=(xs[idx + 1] - 0.06, 0.5),
+                xytext=(x_pos + 0.06, 0.5),
+                arrowprops={"arrowstyle": "->", "color": "#14213d", "lw": 1.5},
+                xycoords=ax.transAxes,
+                textcoords=ax.transAxes,
+            )
+    ax.set_title("Conceptual analysis pipeline")
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
