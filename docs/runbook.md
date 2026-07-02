@@ -5,12 +5,24 @@
 Start with the smoke experiment:
 
 ```bash
+python -m dynsys_econometrics smoke
 python scripts/run_smoke_experiment.py
 ```
 
 This is the fastest way to confirm that the core simulation, extremes, and return-time modules are wired correctly.
 
 ## Command map
+
+### `python -m dynsys_econometrics`
+
+- purpose: package CLI for the main reproducible workflows
+- subcommands:
+  - `smoke`
+  - `synthetic --config ...`
+  - `empirical --config ...`
+  - `validate-catalog --catalog ...`
+- external data required: depends on subcommand
+- output mode: terminal summary and, for experiments, saved outputs
 
 ### `python scripts/run_smoke_experiment.py`
 

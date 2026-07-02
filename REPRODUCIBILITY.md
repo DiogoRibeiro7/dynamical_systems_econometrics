@@ -27,6 +27,16 @@ ruff check .
 mypy
 ```
 
+### Package CLI
+
+```bash
+python -m dynsys_econometrics
+python -m dynsys_econometrics smoke
+python -m dynsys_econometrics synthetic --config configs/synthetic.yaml
+python -m dynsys_econometrics empirical --config configs/empirical.yaml
+python -m dynsys_econometrics validate-catalog --catalog data/catalog.example.yaml
+```
+
 ### Smoke experiment
 
 ```bash

@@ -77,6 +77,10 @@ mypy
 
 This repository currently exposes script entry points rather than a package CLI:
 
+- `python -m dynsys_econometrics`
+  - purpose: package CLI with `smoke`, `synthetic`, `empirical`, and `validate-catalog` subcommands
+  - external data required: depends on subcommand
+  - outputs: subcommand-specific
 - `python scripts/run_smoke_experiment.py`
   - purpose: compare rare-event clustering in a logistic-map observable and an AR(1) baseline
   - external data required: no
@@ -97,6 +101,15 @@ This repository currently exposes script entry points rather than a package CLI:
   - purpose: validate the public-data catalog used by the offline/online ingestion layer
   - external data required: no
   - outputs: terminal validation summary only
+
+The package CLI mirrors these core workflows:
+
+```bash
+python -m dynsys_econometrics smoke
+python -m dynsys_econometrics synthetic --config configs/synthetic.yaml
+python -m dynsys_econometrics empirical --config configs/empirical.yaml
+python -m dynsys_econometrics validate-catalog --catalog data/catalog.example.yaml
+```
 
 ## Data contract
 
