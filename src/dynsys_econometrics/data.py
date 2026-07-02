@@ -266,19 +266,20 @@ def load_world_bank_csv(
             )
         raise DataLoadFailure("No year columns found for World Bank wide format.")
 
-    inferred_series = (
-        str(frame["Series Code"].iloc[0])
-        if "Series Code" in frame.columns
-        else (
-            str(frame["Series Name"].iloc[0])
-            if "Series Name" in frame.columns
-            else None
-        )
-    )
-    if inferred_series is None:
-        if series_id is None:
-            raise DataLoadFailure("Provide `series_id` for World Bank export.")
+    if series_id is not None:
         inferred_series = str(series_id)
+    else:
+        inferred_series = (
+            str(frame["Series Code"].iloc[0])
+            if "Series Code" in frame.columns
+            else (
+                str(frame["Series Name"].iloc[0])
+                if "Series Name" in frame.columns
+                else None
+            )
+        )
+        if inferred_series is None:
+            raise DataLoadFailure("Provide `series_id` for World Bank export.")
 
     long_frame = frame.melt(
         id_vars=[
@@ -294,13 +295,16 @@ def load_world_bank_csv(
         raise DataLoadFailure("World Bank CSV yielded no rows after reshaping.")
 
     long_frame["value"] = pd.to_numeric(long_frame["value"].replace("..", pd.NA), errors="coerce")
-    long_frame["series_id"] = (
-        long_frame["Series Code"]
-        if "Series Code" in long_frame.columns
-        else long_frame["Series Name"]
-        if "Series Name" in long_frame.columns
-        else inferred_series
-    )
+    if series_id is not None:
+        long_frame["series_id"] = inferred_series
+    else:
+        long_frame["series_id"] = (
+            long_frame["Series Code"]
+            if "Series Code" in long_frame.columns
+            else long_frame["Series Name"]
+            if "Series Name" in long_frame.columns
+            else inferred_series
+        )
 
     long_frame["series_id"] = long_frame["series_id"].astype(str).str.cat(
         long_frame["Country Name"].astype(str).str.strip(),

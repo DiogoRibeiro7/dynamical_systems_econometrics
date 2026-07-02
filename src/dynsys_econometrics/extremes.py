@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional, Sequence
+from typing import Sequence
 
 import numpy as np
 from numpy.typing import NDArray
@@ -101,6 +101,8 @@ def _run_length_validation(run_length: int) -> None:
     """Validate declustering run length."""
     if not isinstance(run_length, int) or run_length < 1:
         raise ValueError("run_length must be a positive integer.")
+
+
 def exceedance_indicator(values: FloatArray, threshold: float) -> BoolArray:
     """Return a boolean indicator for exceedances above a threshold."""
     values = _coerce_numeric_series(values)
@@ -202,9 +204,9 @@ def runs_declustering_from_indicator(
     if positions.size == 0:
         return np.zeros(0, dtype=np.int64)
 
-    clusters = [1]
     cluster_size = 1
     previous = int(positions[0])
+    clusters: list[int] = []
 
     for position in positions[1:]:
         gap = int(position) - previous
