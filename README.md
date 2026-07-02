@@ -61,6 +61,19 @@ ruff check .
 mypy
 ```
 
+## Command map
+
+This repository currently exposes script entry points rather than a package CLI:
+
+- `python scripts/run_smoke_experiment.py`
+  - purpose: compare rare-event clustering in a logistic-map observable and an AR(1) baseline
+  - external data required: no
+  - outputs: terminal summary only
+- `python scripts/generate_article_figures.py`
+  - purpose: generate the article figure bundle under `article/figures/`
+  - external data required: no, but it will use `data/raw/macro_stress_example.csv` if present
+  - outputs: figure PNGs and a terminal summary of generated paths
+
 ## Data contract
 
 All loaders are normalized to the same long-format schema:
@@ -97,6 +110,11 @@ tests/                  Unit tests and smoke tests
 ## Notebook workflow
 
 The notebook set is described in [notebooks/README.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/notebooks/README.md). Each notebook states its research question and data assumptions explicitly.
+
+## Runbook and reproducibility
+
+- Researcher runbook: [docs/runbook.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/docs/runbook.md)
+- Reproducibility manifest: [REPRODUCIBILITY.md](C:/Users/diogo/work_code/dynamical_systems_econometrics/REPRODUCIBILITY.md)
 
 ## Citation
 
