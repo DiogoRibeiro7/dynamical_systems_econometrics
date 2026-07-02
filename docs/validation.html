@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Reproducibility | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Validation Guide | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -79,10 +79,6 @@
         border: 1px solid var(--line);
       }
 
-      ul {
-        padding-left: 20px;
-      }
-
       .nav {
         display: flex;
         flex-wrap: wrap;
@@ -96,6 +92,10 @@
         border: 1px solid var(--line);
         background: rgba(255, 253, 248, 0.9);
         text-decoration: none;
+      }
+
+      ul {
+        padding-left: 20px;
       }
     </style>
   </head>
@@ -120,65 +120,61 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Reproducibility</h1>
+        <h1>Validation guide</h1>
         <p>
-          This page summarizes how to install, run, and interpret the repository
-          reproducibly. The repository is designed to work without paid data,
-          hidden credentials, or private machine paths.
+          This repository aims to be a credible research package rather than a
+          notebook dump. The validation surface therefore includes schema
+          contracts, hand-crafted mathematical tests, synthetic behavioral tests,
+          smoke entry-point tests, and quality gates for code style and typing.
         </p>
 
-        <h2>Installation</h2>
-        <pre><code>python -m venv .venv
-source .venv/bin/activate
-pip install -e ".[dev]"</code></pre>
-
-        <h2>Core run commands</h2>
-        <pre><code>python -m dynsys_econometrics smoke
-python -m dynsys_econometrics synthetic --config configs/synthetic.yaml
-python -m dynsys_econometrics empirical --config configs/empirical.yaml
-python scripts/generate_article_figures.py</code></pre>
-
-        <h2>Quality commands</h2>
+        <h2>Core quality commands</h2>
         <pre><code>pytest -q
 ruff check .
 mypy</code></pre>
 
-        <h2>Output directories</h2>
+        <h2>What is tested directly</h2>
         <ul>
-          <li><code>outputs/synthetic_logistic_vs_ar1/</code>: synthetic experiment tables, figures, and run summary</li>
-          <li><code>outputs/empirical_macro_stress/</code>: empirical experiment tables, figures, and run summary</li>
-          <li><code>outputs/notebooks/&lt;notebook_name&gt;/</code>: prompt-aligned notebook outputs</li>
-          <li><code>article/figures/</code>: article-facing figures and matching source CSVs</li>
+          <li>long-format and event-frame schema contracts</li>
+          <li>parameter validation for simulations</li>
+          <li>hand-crafted extremal and recurrence sequences</li>
+          <li>grouped transforms and baseline summaries</li>
+          <li>multivariate stress tables</li>
+          <li>experiment orchestration and wrapper entry points</li>
+          <li>plotting save paths and article-figure bundles</li>
         </ul>
 
-        <h2>Data requirements</h2>
+        <h2>Test categories</h2>
         <ul>
-          <li>Smoke and synthetic workflows require no external data.</li>
-          <li>Empirical workflows require a local canonical long-format CSV: <code>date, series_id, value</code>.</li>
-          <li>The article-figure script can use <code>data/raw/macro_stress_example.csv</code> if present, but falls back to synthetic data otherwise.</li>
+          <li>contract tests: expected columns, duplicates, missingness, and invalid types</li>
+          <li>mathematical sanity tests: simple sequences with known answers</li>
+          <li>synthetic behavioral tests: broad qualitative expectations under fixed seeds</li>
+          <li>pipeline tests: CLI and script entry points that write real outputs</li>
+          <li>numerical edge cases: empty inputs, zero variance, invalid thresholds, and missing mappings</li>
         </ul>
 
-        <h2>Determinism and seeds</h2>
+        <h2>What tests do not prove</h2>
+        <ul>
+          <li>stable asymptotic extreme-value behavior in short empirical samples</li>
+          <li>causal identification</li>
+          <li>that a synthetic benchmark is a realistic macroeconomic model</li>
+          <li>that a result derived from fallback synthetic data is empirical evidence</li>
+        </ul>
+
+        <h2>Interpretation rule</h2>
         <p>
-          The smoke script, synthetic experiment paths, and article figure
-          generation use fixed seeds where stochastic components are involved.
-          Exact floating-point values can still vary slightly across dependency
-          versions, but the workflows are deterministic at the code level.
+          Passing tests means the repository is internally more reliable. It does
+          not mean that every substantive empirical interpretation is justified.
+          Those questions still depend on data quality, sample size, threshold
+          stability, and the supported-claim guardrails.
         </p>
 
-        <h2>Known limitations</h2>
+        <h2>Repository references</h2>
         <ul>
-          <li>Synthetic fallbacks are useful for smoke tests and examples, not for empirical claims.</li>
-          <li>Rare-event and recurrence diagnostics are descriptive rather than causal.</li>
-          <li>Short empirical samples can make threshold-based diagnostics unstable.</li>
-          <li>The repository draws methodological inspiration from dynamical systems without claiming that observed economies are literal deterministic maps.</li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/validation_strategy.md">Validation strategy markdown</a></li>
+          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/numerical_stability.md">Numerical stability notes</a></li>
+          <li><a href="troubleshooting.html">Troubleshooting page</a></li>
         </ul>
-
-        <h2>Repository reference</h2>
-        <p>
-          The full source manifest is available in
-          <a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/REPRODUCIBILITY.md">REPRODUCIBILITY.md</a>.
-        </p>
       </section>
     </main>
   </body>
