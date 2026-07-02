@@ -1,0 +1,17 @@
+experiment:
+  name: dynsys_extremes_econometrics
+  threshold_quantile: 0.95
+  run_lengths: [1, 3, 5, 10]
+  rolling_window: 252
+
+series:
+  examples:
+    - name: equity_returns
+      transformation: absolute_log_return
+      rare_event: high_volatility
+    - name: inflation
+      transformation: rolling_zscore
+      rare_event: inflation_shock
+    - name: sovereign_spread
+      transformation: level_or_change
+      rare_event: debt_stress
