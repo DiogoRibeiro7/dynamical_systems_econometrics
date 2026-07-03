@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Research Guardrails | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Citation | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -53,7 +53,7 @@
       h2 {
         margin-top: 28px;
         margin-bottom: 10px;
-        font-size: 1.45rem;
+        font-size: 1.4rem;
       }
 
       p,
@@ -66,21 +66,17 @@
         color: var(--accent);
       }
 
-      code {
+      code,
+      pre {
         font-family: "Courier New", monospace;
       }
 
-      .grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 16px;
-        margin-top: 24px;
-      }
-
-      .card {
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
         border: 1px solid var(--line);
-        background: rgba(255, 253, 248, 0.9);
-        padding: 20px;
       }
 
       .nav {
@@ -137,57 +133,50 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Research guardrails</h1>
+        <h1>Citation</h1>
         <p>
-          This repository uses dynamical-systems-inspired methods to study
-          recurrence, clustering, and joint stress in observed economic time
-          series. That makes the methods useful, but it also creates clear
-          limits on what the outputs justify.
+          This repository should be cited in a way that preserves the difference
+          between software, workflow artifacts, and substantive research claims.
+          A citation is strongest when it points to a stable repository state and
+          makes clear whether the referenced object is code, documentation, or an
+          article-facing output bundle.
         </p>
 
-        <div class="grid">
-          <article class="card">
-            <h2>Supported claims</h2>
-            <ul>
-              <li>one series exhibits more clustered extremes than another</li>
-              <li>return times to stress regions differ across systems or regimes</li>
-              <li>joint stress events involve simultaneous threshold exceedances</li>
-              <li>rare-event diagnostics and baseline econometric summaries capture different patterns</li>
-            </ul>
-          </article>
-
-          <article class="card">
-            <h2>Unsupported claims</h2>
-            <ul>
-              <li>observed economies are literally deterministic maps</li>
-              <li>recurrence diagnostics identify causal mechanisms</li>
-              <li>extremal-index estimates isolate a policy effect</li>
-              <li>return-time summaries forecast the exact next crisis date</li>
-            </ul>
-          </article>
-        </div>
-
-        <h2>How to frame results</h2>
-        <p>
-          Use language such as <em>describes</em>, <em>is consistent with</em>,
-          <em>highlights clustering</em>, or <em>suggests recurrence structure</em>.
-          Avoid language such as <em>proves</em>, <em>shows causality</em>, or
-          <em>predicts the next crisis date</em>.
-        </p>
-
-        <h2>Before publishing a claim</h2>
+        <h2>Preferred repository citation basis</h2>
         <ul>
-          <li>Confirm the claim is traceable to a saved figure, table, or CSV.</li>
-          <li>Check whether the result is based on real empirical data or a synthetic fallback.</li>
-          <li>Inspect threshold sensitivity before writing strong prose.</li>
-          <li>Keep descriptive diagnostics separate from causal interpretation.</li>
+          <li>use the metadata in <code>CITATION.cff</code> as the primary reference source</li>
+          <li>prefer tagged releases over moving branch heads when a stable version exists</li>
+          <li>name the repository directly when discussing software, package structure, or reproducible workflows</li>
         </ul>
 
-        <h2>Repository references</h2>
+        <h2>What to cite as software</h2>
         <ul>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/empirical_claim_guardrails.md">Empirical claim guardrails</a></li>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/article_support_matrix.md">Article support matrix</a></li>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/article/claims_checklist.md">Article claims checklist</a></li>
+          <li>package code under <code>src/dynsys_econometrics/</code></li>
+          <li>documented CLI and script workflows</li>
+          <li>versioned repository states that produce stable public artifacts</li>
+        </ul>
+
+        <h2>What to cite more carefully</h2>
+        <ul>
+          <li>article-facing figures should be cited as outputs derived from the repository, not as standalone evidence engines</li>
+          <li>synthetic benchmark outputs should not be cited as empirical findings</li>
+          <li>draft article material should be distinguished from stable software interfaces</li>
+        </ul>
+
+        <h2>Attribution rule</h2>
+        <p>
+          If a downstream user relies on the code, cite the repository. If they
+          rely on an argument built from repository outputs, they should cite the
+          argument-bearing material as well and keep the software citation
+          separate from the evidence citation.
+        </p>
+
+        <h2>Related pages</h2>
+        <ul>
+          <li><a href="release.html">Release process</a></li>
+          <li><a href="results.html">Results guide</a></li>
+          <li><a href="article.html">Article guide</a></li>
+          <li><a href="reuse.html">Reuse</a></li>
         </ul>
       </section>
     </main>
