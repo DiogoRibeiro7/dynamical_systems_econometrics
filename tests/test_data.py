@@ -215,6 +215,44 @@ def test_load_empirical_panel_supports_per_series_overrides(tmp_path) -> None:
     assert frame["series_id"].tolist() == ["equity", "equity", "inflation", "inflation", "inflation"]
 
 
+def test_load_empirical_panel_supports_multiple_catalogs(tmp_path) -> None:
+    first_raw = tmp_path / "first.csv"
+    second_raw = tmp_path / "second.csv"
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01"],
+            "value": [100.0, 101.0],
+        }
+    ).to_csv(first_raw, index=False)
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01"],
+            "value": [2.0, 2.1],
+        }
+    ).to_csv(second_raw, index=False)
+    first_catalog = tmp_path / "catalog_one.yaml"
+    second_catalog = tmp_path / "catalog_two.yaml"
+    first_catalog.write_text(
+        "series:\n"
+        "  - series_id: equity\n"
+        "    description: Equity levels\n"
+        "    source: local_csv\n"
+        f"    path: {first_raw.as_posix()}\n",
+        encoding="utf-8",
+    )
+    second_catalog.write_text(
+        "series:\n"
+        "  - series_id: inflation\n"
+        "    description: Inflation levels\n"
+        "    source: local_csv\n"
+        f"    path: {second_raw.as_posix()}\n",
+        encoding="utf-8",
+    )
+
+    frame = load_empirical_panel({"catalog_paths": [str(first_catalog), str(second_catalog)]})
+    assert frame["series_id"].tolist() == ["equity", "equity", "inflation", "inflation"]
+
+
 def test_load_fred_uses_cached_standard_panel(tmp_path) -> None:
     cache_path = tmp_path / "fred_cache.csv"
     pd.DataFrame(

@@ -4,8 +4,15 @@ experiment:
   seed: 42
 
 empirical:
-  catalog_path: data/catalog.example.yaml
-  output_path: data/processed/catalog_panel.csv
+  series:
+    - loader: local_csv
+      path: data/raw/example_equity_index.csv
+      series_id: example_equity_index
+      transformation: log_return
+    - loader: local_csv
+      path: data/raw/example_inflation.csv
+      series_id: example_inflation
+      transformation: level
 
 analysis:
   threshold_quantile: 0.95

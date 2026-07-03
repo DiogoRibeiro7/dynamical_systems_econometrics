@@ -443,6 +443,29 @@ def _default_series_col(path: str | Path, *, series_id: str | None, series_col: 
 def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
     """Load an empirical panel from a structured loader configuration."""
     loader_config = dict(spec)
+    catalog_entries = loader_config.get("catalogs", loader_config.get("catalog_paths"))
+    if isinstance(catalog_entries, list):
+        if len(catalog_entries) == 0:
+            raise DataLoadFailure("Empirical multi-catalog loader requires a non-empty `catalogs` list.")
+        frames: list[DataFrame] = []
+        for entry in catalog_entries:
+            merged_entry = dict(loader_config)
+            merged_entry.pop("catalogs", None)
+            merged_entry.pop("catalog_paths", None)
+            if isinstance(entry, (str, Path)):
+                merged_entry["catalog_path"] = entry
+            elif isinstance(entry, Mapping):
+                mapped_entry = dict(entry)
+                if "catalog_path" not in mapped_entry and "catalog" not in mapped_entry and "path" in mapped_entry:
+                    mapped_entry["catalog_path"] = mapped_entry.pop("path")
+                merged_entry.update(mapped_entry)
+            else:
+                raise DataLoadFailure("Each empirical catalog entry must be a path or a mapping.")
+            frames.append(load_empirical_panel(merged_entry))
+        return cast(
+            DataFrame,
+            pd.concat(frames, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True),
+        )
     series_entries = loader_config.get("series")
     if isinstance(series_entries, list):
         if len(series_entries) == 0:

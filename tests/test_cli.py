@@ -363,3 +363,70 @@ def test_package_cli_empirical_accepts_per_series_overrides(capsys, tmp_path: Pa
     captured = capsys.readouterr()
     assert "cli_empirical_multi_series_test" in captured.out
     assert (output_dir / "run_summary.json").exists()
+
+
+def test_package_cli_empirical_accepts_multiple_catalogs(capsys, tmp_path: Path) -> None:
+    module = importlib.import_module("dynsys_econometrics.__main__")
+    first_raw = tmp_path / "first.csv"
+    second_raw = tmp_path / "second.csv"
+    output_dir = tmp_path / "empirical_multi_catalog_outputs"
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=24, freq="ME"),
+            "value": [100.0 + i for i in range(24)],
+        }
+    ).to_csv(first_raw, index=False)
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=24, freq="ME"),
+            "value": [2.0 + 0.1 * i for i in range(24)],
+        }
+    ).to_csv(second_raw, index=False)
+    first_catalog = tmp_path / "catalog_one.yaml"
+    second_catalog = tmp_path / "catalog_two.yaml"
+    first_catalog.write_text(
+        "series:\n"
+        "  - series_id: equity\n"
+        "    description: Equity levels\n"
+        "    source: local_csv\n"
+        f"    path: {first_raw.as_posix()}\n",
+        encoding="utf-8",
+    )
+    second_catalog.write_text(
+        "series:\n"
+        "  - series_id: inflation\n"
+        "    description: Inflation levels\n"
+        "    source: local_csv\n"
+        f"    path: {second_raw.as_posix()}\n",
+        encoding="utf-8",
+    )
+    config_path = tmp_path / "empirical_multi_catalog.yaml"
+    config_path.write_text(
+        "experiment:\n"
+        "  name: cli_empirical_multi_catalog_test\n"
+        "  mode: empirical\n"
+        "empirical:\n"
+        "  catalog_paths:\n"
+        f"    - {first_catalog.as_posix()}\n"
+        f"    - {second_catalog.as_posix()}\n"
+        "analysis:\n"
+        "  threshold_quantile: 0.9\n"
+        "  run_length: 2\n"
+        "outputs:\n"
+        f"  directory: {output_dir.as_posix()}\n",
+        encoding="utf-8",
+    )
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [
+            "python -m dynsys_econometrics",
+            "empirical",
+            "--config",
+            str(config_path),
+        ]
+        module.main()
+    finally:
+        sys.argv = original_argv
+    captured = capsys.readouterr()
+    assert "cli_empirical_multi_catalog_test" in captured.out
+    assert (output_dir / "run_summary.json").exists()
