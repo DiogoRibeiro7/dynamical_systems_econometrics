@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Data Provenance | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Governance | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -119,56 +119,50 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Data provenance</h1>
+        <h1>Governance</h1>
         <p>
-          The repository supports both configured public-data workflows and fully
-          synthetic fallback workflows. Those paths are operationally useful for
-          different reasons, but they must not be merged conceptually: one is
-          about evidence, the other is about reproducibility and method behavior.
+          Governance in this repository is mainly about decision quality:
+          keeping methods, claims, and public documentation aligned while
+          resisting scope creep that would outrun reproducibility and evidence.
         </p>
 
-        <h2>Input families</h2>
+        <h2>Primary governance concerns</h2>
         <ul>
-          <li>public or external macro-financial series fetched or prepared through configured loaders</li>
-          <li>bundled examples and catalogs that describe expected source structure</li>
-          <li>synthetic simulations used for smoke tests, benchmarks, and controlled comparisons</li>
+          <li>protecting stable interfaces and documented workflows</li>
+          <li>keeping research claims narrower than the evidence when necessary</li>
+          <li>preferring tested package logic over notebook-only convenience code</li>
+          <li>making scope expansions explicit rather than accidental</li>
         </ul>
 
-        <h2>Normalization rule</h2>
+        <h2>Decision standard</h2>
+        <ul>
+          <li>changes should improve correctness, clarity, or reproducibility</li>
+          <li>new complexity needs a defensible maintenance story</li>
+          <li>public-facing claims need matching provenance, limitation, and results context</li>
+        </ul>
+
+        <h2>Review expectation</h2>
         <p>
-          Regardless of source, loaders are expected to normalize data into a
-          stable long format such as <code>date, series_id, value</code>. That
-          keeps downstream diagnostics source-agnostic and easier to test.
+          Good review should ask not only whether code runs, but whether the
+          repository becomes easier to trust. That includes interfaces, docs,
+          output naming, and the discipline of not overstating what the methods
+          establish.
         </p>
 
-        <h2>What provenance supports</h2>
-        <ul>
-          <li>tracing an artifact back to its source path, loader, and configuration</li>
-          <li>distinguishing empirical runs from synthetic fallbacks</li>
-          <li>checking whether a reported output should be treated as evidence or only as a workflow artifact</li>
-        </ul>
-
-        <h2>What provenance does not solve by itself</h2>
-        <ul>
-          <li>sample-quality problems in the original source</li>
-          <li>threshold instability or estimator sensitivity</li>
-          <li>over-interpretation of visually compelling but weakly supported results</li>
-        </ul>
-
-        <h2>Hard interpretation boundary</h2>
+        <h2>Scope rule</h2>
         <p>
-          Synthetic fallback outputs are legitimate for testing and benchmarking.
-          They are not empirical evidence. If a result matters for a substantive
-          claim, the provenance chain must point to the configured real-data path
-          rather than to a convenience simulation.
+          When a proposed addition increases interpretive risk faster than it
+          increases reliability, it should be narrowed, delayed, or rejected.
+          Governance here is intentionally conservative because research repos
+          fail more often through weak claims than through missing features.
         </p>
 
         <h2>Related pages</h2>
         <ul>
-          <li><a href="data.html">Data guide</a></li>
-          <li><a href="results.html">Results guide</a></li>
-          <li><a href="research.html">Research guardrails</a></li>
-          <li><a href="reproducibility.html">Reproducibility guide</a></li>
+          <li><a href="contributing.html">Contributing guide</a></li>
+          <li><a href="roadmap.html">Roadmap</a></li>
+          <li><a href="limitations.html">Limitations</a></li>
+          <li><a href="release.html">Release process</a></li>
         </ul>
       </section>
     </main>

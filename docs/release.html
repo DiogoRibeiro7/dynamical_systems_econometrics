@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Data Provenance | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Release Process | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -66,6 +66,19 @@
         color: var(--accent);
       }
 
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
+      }
+
       .nav {
         display: flex;
         flex-wrap: wrap;
@@ -119,56 +132,46 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Data provenance</h1>
+        <h1>Release process</h1>
         <p>
-          The repository supports both configured public-data workflows and fully
-          synthetic fallback workflows. Those paths are operationally useful for
-          different reasons, but they must not be merged conceptually: one is
-          about evidence, the other is about reproducibility and method behavior.
+          Releases should make stable repository states easier to consume, not
+          simply mark arbitrary moments in local development. A good release ties
+          code, docs, article-facing artifacts, and scope statements together.
         </p>
 
-        <h2>Input families</h2>
+        <h2>Expected release ingredients</h2>
         <ul>
-          <li>public or external macro-financial series fetched or prepared through configured loaders</li>
-          <li>bundled examples and catalogs that describe expected source structure</li>
-          <li>synthetic simulations used for smoke tests, benchmarks, and controlled comparisons</li>
+          <li>committed package and documentation changes with a clear scope</li>
+          <li>updated public pages when interfaces, workflows, or interpretation boundaries changed</li>
+          <li>taggable repository state with coherent notes about what is stable and what remains exploratory</li>
         </ul>
 
-        <h2>Normalization rule</h2>
+        <h2>Typical release flow</h2>
+        <pre><code>git status
+git add ...
+git commit -m "Summarize release scope"
+git tag vX.Y.Z</code></pre>
+
+        <h2>What should block a release</h2>
+        <ul>
+          <li>unexplained workflow or output-path changes</li>
+          <li>new empirical language without matching provenance and limitation updates</li>
+          <li>docs that no longer describe the current stable surface of the repository</li>
+        </ul>
+
+        <h2>Release standard</h2>
         <p>
-          Regardless of source, loaders are expected to normalize data into a
-          stable long format such as <code>date, series_id, value</code>. That
-          keeps downstream diagnostics source-agnostic and easier to test.
-        </p>
-
-        <h2>What provenance supports</h2>
-        <ul>
-          <li>tracing an artifact back to its source path, loader, and configuration</li>
-          <li>distinguishing empirical runs from synthetic fallbacks</li>
-          <li>checking whether a reported output should be treated as evidence or only as a workflow artifact</li>
-        </ul>
-
-        <h2>What provenance does not solve by itself</h2>
-        <ul>
-          <li>sample-quality problems in the original source</li>
-          <li>threshold instability or estimator sensitivity</li>
-          <li>over-interpretation of visually compelling but weakly supported results</li>
-        </ul>
-
-        <h2>Hard interpretation boundary</h2>
-        <p>
-          Synthetic fallback outputs are legitimate for testing and benchmarking.
-          They are not empirical evidence. If a result matters for a substantive
-          claim, the provenance chain must point to the configured real-data path
-          rather than to a convenience simulation.
+          If a reader cannot tell what changed, what is trustworthy, and what is
+          still exploratory, the repository is not in a good release state. A
+          release is partly a communication event, not just a git event.
         </p>
 
         <h2>Related pages</h2>
         <ul>
-          <li><a href="data.html">Data guide</a></li>
-          <li><a href="results.html">Results guide</a></li>
-          <li><a href="research.html">Research guardrails</a></li>
+          <li><a href="status.html">Project status</a></li>
+          <li><a href="roadmap.html">Roadmap</a></li>
           <li><a href="reproducibility.html">Reproducibility guide</a></li>
+          <li><a href="governance.html">Governance</a></li>
         </ul>
       </section>
     </main>
