@@ -45,11 +45,24 @@ The current codebase supports a reproducible rare-event workflow with the follow
 
 These are the supported outputs. They are sufficient for a computational article about recurrence diagnostics. They are not sufficient for stronger claims such as causal identification, structural macroeconomic estimation, or exact crisis-date prediction.
 
+The article-facing figure bundle already reflects this scope. The stable assets are:
+
+- `01_conceptual_pipeline.png` for the workflow from raw inputs to article evidence;
+- `02_synthetic_extremes_comparison.png` for clustered versus more isolated synthetic extremes;
+- `03_return_time_distribution.png` for descriptive return-time behavior;
+- `04_extremal_index_by_series.png` for cross-series clustering comparison;
+- `05_multivariate_stress_timeline.png` for joint-stress timing;
+- `06_econometric_vs_recurrence_diagnostics.png` for descriptive comparison between baseline volatility-style summaries and recurrence-oriented diagnostics.
+
+Each of these figures has a matching source CSV, which means the article can point to saved structured outputs rather than to ad hoc plotting state.
+
 ## Synthetic evidence as the current strongest support
 
 The strongest fully supported evidence in the repository is synthetic. That is not a weakness if it is stated honestly. Synthetic systems are the cleanest way to show why recurrence structure matters, because they let us compare processes that differ in clustering behavior without pretending that the comparison is already an empirical finding.
 
 The repository includes controlled generators for familiar stochastic baselines and nonlinear benchmark systems. Those workflows support a simple but important point: similar-looking series can differ materially in recurrence and clustering, and that difference appears in exceedance patterns, return times, and extremal-index summaries.
+
+In article terms, that synthetic support is most directly expressed through `02_synthetic_extremes_comparison.png`, which is the clearest visual anchor for the claim that tail behavior differs not only in magnitude but also in recurrence structure.
 
 This is exactly the right use of the synthetic layer. It is not evidence that economies are chaotic maps. It is evidence that recurrence diagnostics detect behavior not fully summarized by means, variances, or one-dimensional tail thickness alone.
 
@@ -61,17 +74,23 @@ In a macro-financial context, clustered exceedances matter because they correspo
 
 The value of the extremal index in this repository is therefore operational rather than metaphysical. It is a compact description of whether the tail is episodic or persistent.
 
+The most direct article-facing support for this point is `04_extremal_index_by_series.png`, which summarizes cross-series clustering differences without requiring a stronger structural interpretation than the code currently supports.
+
 ## Return times and recurrence summaries
 
 Return-time summaries complement clustering diagnostics. They ask how long the process typically takes to revisit a threshold-defined stress region. Again, the claim must remain careful: these summaries describe recurrence patterns in observed or simulated data; they do not deliver exact forecasting rules for the next crisis date.
 
 Used correctly, they help distinguish between environments where stress regions are rarely revisited and environments where the system returns quickly and repeatedly. That is a meaningful descriptive difference even when it does not identify the cause of the behavior.
 
+That descriptive role is exactly what `03_return_time_distribution.png` supports. It is evidence about recurrence timing patterns, not a device for exact crisis-date prediction.
+
 ## Multivariate stress and joint recurrence
 
 The repository also supports multivariate stress summaries. This matters because macro-financial danger often appears through joint pressure rather than through one variable in isolation. A single stressed series may be manageable; simultaneous stress across inflation, spreads, funding proxies, or market indicators is more consequential.
 
 The supported interpretation here is still descriptive. Joint recurrence diagnostics can show that stress appears together across observables more often than an isolated reading would suggest. They do not, by themselves, identify a structural transmission mechanism.
+
+The relevant stable visual here is `05_multivariate_stress_timeline.png`, which supports a joint-stress timing narrative but not a causal account of why the co-movement occurs.
 
 ## Empirical use: template, not result
 
@@ -86,6 +105,8 @@ That distinction is important. The empirical layer is best described as ready fo
 This project is not a rejection of standard econometrics. It is better understood as a complement. Baseline volatility-style and dependence summaries remain useful benchmarks. The repository explicitly keeps descriptive baseline comparisons because recurrence tools should be interpreted against familiar diagnostics rather than in isolation.
 
 The incremental contribution is therefore specific: recurrence-oriented rare-event summaries provide information about tail occupation, clustering, and revisitation that standard baseline summaries may not foreground.
+
+That complementarity is what `06_econometric_vs_recurrence_diagnostics.png` is for. The figure is strongest when used to compare descriptive lenses, not when used to claim that one framework fully dominates the other.
 
 ## Limitations
 
