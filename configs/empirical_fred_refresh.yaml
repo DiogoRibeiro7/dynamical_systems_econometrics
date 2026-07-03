@@ -1,0 +1,21 @@
+experiment:
+  name: empirical_fred_refresh_example
+  mode: empirical
+  seed: 42
+
+empirical:
+  loader: fred
+  series_id: UNRATE
+  cache_path: data/processed/fred_unrate_cached.csv
+  refresh: true
+  # Replace with a real FRED API key before using this config.
+  api_key: REPLACE_WITH_FRED_API_KEY
+  transformation: level
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 24
+
+outputs:
+  directory: outputs/empirical_fred_refresh_example
