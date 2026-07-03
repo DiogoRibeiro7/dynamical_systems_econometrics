@@ -417,6 +417,80 @@ def test_package_cli_refresh_cache_runs(capsys, tmp_path: Path, monkeypatch) -> 
     assert cache_path.exists()
 
 
+def test_package_cli_refresh_cache_reports_multi_series_targets(capsys, tmp_path: Path, monkeypatch) -> None:
+    module = importlib.import_module("dynsys_econometrics.__main__")
+    fred_cache = tmp_path / "fred_cache.csv"
+    market_cache = tmp_path / "market_cache.csv"
+    config_path = tmp_path / "multi_refresh.yaml"
+    config_path.write_text(
+        "experiment:\n"
+        "  name: cli_multi_refresh_cache_test\n"
+        "  mode: empirical\n"
+        "empirical:\n"
+        "  series:\n"
+        "    - loader: fred\n"
+        "      series_id: UNRATE\n"
+        "      api_key: demo\n"
+        f"      cache_path: {fred_cache.as_posix()}\n"
+        "    - loader: yfinance\n"
+        "      symbols:\n"
+        "        - SPY\n"
+        f"      cache_path: {market_cache.as_posix()}\n"
+        "      refresh: true\n"
+        "      transformation: pct_change\n",
+        encoding="utf-8",
+    )
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            payload = {
+                "observations": [
+                    {"date": "2020-01-01", "value": "3.5"},
+                    {"date": "2020-02-01", "value": "3.6"},
+                ]
+            }
+            import json
+
+            return json.dumps(payload).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    import types
+
+    fake_module = types.SimpleNamespace()
+
+    def _download(**kwargs):
+        return pd.DataFrame(
+            {"Close": [320.0, 330.0]},
+            index=pd.to_datetime(["2020-01-01", "2020-02-01"]),
+        )
+
+    fake_module.download = _download
+    monkeypatch.setitem(sys.modules, "yfinance", fake_module)
+
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [
+            "python -m dynsys_econometrics",
+            "refresh-cache",
+            "--config",
+            str(config_path),
+        ]
+        module.main()
+    finally:
+        sys.argv = original_argv
+        sys.modules.pop("yfinance", None)
+    captured = capsys.readouterr()
+    assert str(fred_cache) in captured.out
+    assert str(market_cache) in captured.out
+
+
 def test_package_cli_empirical_accepts_multiple_catalogs(capsys, tmp_path: Path) -> None:
     module = importlib.import_module("dynsys_econometrics.__main__")
     first_raw = tmp_path / "first.csv"

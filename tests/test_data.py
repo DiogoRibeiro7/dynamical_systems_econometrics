@@ -560,3 +560,68 @@ def test_refresh_empirical_cache_supports_catalog_path(tmp_path, monkeypatch) ->
     assert summary["n_rows"] == 2
     assert output_path.exists()
     assert cache_path.exists()
+
+
+def test_refresh_empirical_cache_reports_multi_series_targets(tmp_path, monkeypatch) -> None:
+    fred_cache = tmp_path / "fred_cache.csv"
+    market_cache = tmp_path / "market_cache.csv"
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            payload = {
+                "observations": [
+                    {"date": "2020-01-01", "value": "3.5"},
+                    {"date": "2020-02-01", "value": "3.6"},
+                ]
+            }
+            return json.dumps(payload).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    import types
+
+    fake_module = types.SimpleNamespace()
+
+    def _download(**kwargs):
+        return pd.DataFrame(
+            {"Close": [320.0, 330.0]},
+            index=pd.to_datetime(["2020-01-01", "2020-02-01"]),
+        )
+
+    fake_module.download = _download
+    monkeypatch.setitem(sys.modules, "yfinance", fake_module)
+
+    try:
+        summary = refresh_empirical_cache(
+            {
+                "series": [
+                    {
+                        "loader": "fred",
+                        "series_id": "UNRATE",
+                        "api_key": "demo",
+                        "cache_path": str(fred_cache),
+                    },
+                    {
+                        "loader": "yfinance",
+                        "symbols": ["SPY"],
+                        "cache_path": str(market_cache),
+                        "refresh": True,
+                        "transformation": "pct_change",
+                    },
+                ]
+            }
+        )
+    finally:
+        sys.modules.pop("yfinance", None)
+
+    assert summary["n_series"] == 2
+    assert str(fred_cache) in summary["targets"]
+    assert str(market_cache) in summary["targets"]
+    assert fred_cache.exists()
+    assert market_cache.exists()

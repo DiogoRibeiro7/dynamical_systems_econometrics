@@ -759,13 +759,44 @@ def refresh_empirical_cache(spec: Mapping[str, Any]) -> dict[str, object]:
         }
 
     panel = load_empirical_panel(loader_config, force_refresh=True)
-    cache_path = loader_config.get("cache_path")
-    targets = [str(cache_path)] if isinstance(cache_path, (str, Path)) else []
+    targets = _collect_refresh_targets(loader_config)
     return {
         "n_series": int(panel["series_id"].nunique()),
         "n_rows": int(len(panel)),
         "targets": targets,
     }
+
+
+def _collect_refresh_targets(spec: Mapping[str, Any]) -> list[str]:
+    targets: list[str] = []
+
+    cache_path = spec.get("cache_path")
+    if isinstance(cache_path, (str, Path)):
+        targets.append(str(cache_path))
+
+    output_path = spec.get("output_path")
+    if isinstance(output_path, (str, Path)):
+        targets.append(str(output_path))
+
+    catalog_entries = spec.get("catalogs", spec.get("catalog_paths"))
+    if isinstance(catalog_entries, list):
+        for entry in catalog_entries:
+            if isinstance(entry, Mapping):
+                targets.extend(_collect_refresh_targets(entry))
+
+    series_entries = spec.get("series")
+    if isinstance(series_entries, list):
+        for entry in series_entries:
+            if isinstance(entry, Mapping):
+                targets.extend(_collect_refresh_targets(entry))
+
+    deduped: list[str] = []
+    seen: set[str] = set()
+    for target in targets:
+        if target not in seen:
+            deduped.append(target)
+            seen.add(target)
+    return deduped
 
 
 def write_processed_panel(frame: TimeSeriesFrame | DataFrame, path: str | Path) -> None:
