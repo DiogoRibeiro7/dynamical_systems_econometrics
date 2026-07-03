@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+import json
+import sys
+import types
+
 import pandas as pd
 
 from dynsys_econometrics.data import (
@@ -341,3 +345,74 @@ def test_materialize_catalog_resolves_paths_relative_to_catalog(tmp_path) -> Non
     panel = pd.read_csv(output_path)
     assert summary["n_rows"] == 2
     assert panel["series_id"].tolist() == ["relative_series", "relative_series"]
+
+
+def test_materialize_catalog_writes_fred_cache_path(tmp_path, monkeypatch) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    output_path = tmp_path / "panel.csv"
+    cache_path = tmp_path / "cache" / "fred_unrate.csv"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: UNRATE\n"
+        "    description: Cached unemployment example\n"
+        "    source: fred\n"
+        "    api_key: demo\n"
+        f"    cache_path: {cache_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            payload = {
+                "observations": [
+                    {"date": "2020-01-01", "value": "3.5"},
+                    {"date": "2020-02-01", "value": "3.6"},
+                ]
+            }
+            return json.dumps(payload).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    summary = materialize_catalog(catalog_path, output_path)
+    assert summary["n_rows"] == 2
+    assert cache_path.exists()
+    cached = pd.read_csv(cache_path)
+    assert cached["series_id"].tolist() == ["UNRATE", "UNRATE"]
+
+
+def test_materialize_catalog_writes_yfinance_cache_path(tmp_path, monkeypatch) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    output_path = tmp_path / "panel.csv"
+    cache_path = tmp_path / "cache" / "spy.csv"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: SPY\n"
+        "    description: Cached market example\n"
+        "    source: yfinance\n"
+        "    symbols: SPY\n"
+        f"    cache_path: {cache_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+
+    fake_module = types.SimpleNamespace()
+
+    def _download(**kwargs):
+        return pd.DataFrame(
+            {"Close": [320.0, 330.0]},
+            index=pd.to_datetime(["2020-01-01", "2020-02-01"]),
+        )
+
+    fake_module.download = _download
+    monkeypatch.setitem(sys.modules, "yfinance", fake_module)
+
+    summary = materialize_catalog(catalog_path, output_path)
+    assert summary["n_rows"] == 2
+    assert cache_path.exists()
+    cached = pd.read_csv(cache_path)
+    assert cached["series_id"].tolist() == ["SPY", "SPY"]

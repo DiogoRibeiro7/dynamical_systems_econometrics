@@ -638,7 +638,7 @@ def _resolve_catalog_path_value(value: Any, *, base_dir: Path) -> Any:
 def _catalog_entry_to_loader_spec(entry: Mapping[str, Any], *, base_dir: Path) -> dict[str, Any]:
     source = str(entry.get("source", "")).strip().lower()
     spec = dict(entry)
-    for key in ("path", "input_path", "csv_path", "directory"):
+    for key in ("path", "input_path", "csv_path", "directory", "cache_path"):
         if key in spec:
             spec[key] = _resolve_catalog_path_value(spec[key], base_dir=base_dir)
     if source in {"local_csv", "canonical_csv", "csv", "timeseries_csv"}:
@@ -760,6 +760,11 @@ def validate_catalog(path: str | Path) -> dict[str, object]:
         elif source == "yfinance":
             if "symbols" not in entry:
                 errors.append(f"Entry {idx} source 'yfinance' requires field 'symbols'.")
+            elif "cache_path" in entry:
+                cache_value = entry["cache_path"]
+                resolved = Path(_resolve_catalog_path_value(cache_value, base_dir=base_dir))
+                if resolved.exists() and not resolved.is_file():
+                    errors.append(f"Entry {idx} cache path is not a file path: {cache_value}")
         elif source not in {"ecb", "oecd", "world_bank"}:
             errors.append(f"Entry {idx} has unsupported source: {source}")
     return {
