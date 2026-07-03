@@ -1,8 +1,24 @@
-# From Chaos to Crisis: Rare-Event Recurrence as an Econometric Diagnostic
+# Rare-Event Recurrence Diagnostics for Econometric Stress Analysis
+
+## Abstract
+
+This article presents a reproducible computational framework for studying rare-event recurrence in macro-financial time series. The contribution is deliberately descriptive rather than causal: the repository implements threshold exceedance extraction, runs-based extremal-index summaries, return-time diagnostics, multivariate stress summaries, and comparisons with standard volatility-style baselines. The strongest current support comes from synthetic and benchmark workflows, which show how processes with similar large observations can differ in clustering and recurrence structure. The empirical workflow is presented as an application template with controlled data-loading, catalog, and cache-refresh paths, rather than as a source of standalone macroeconomic conclusions. The resulting claim is modest but useful: recurrence-oriented rare-event diagnostics provide a disciplined way to distinguish isolated extremes from repeated returns to dangerous regions.
+
+**Keywords:** rare events, recurrence diagnostics, extremal index, return times, macro-financial stress
+
+## Contribution summary
+
+The repository currently supports three article-level contributions:
+
+1. a reproducible synthetic comparison showing that large events can differ in recurrence and clustering structure even when they look superficially similar;
+2. a compact diagnostic workflow for exceedances, return times, extremal-index summaries, and multivariate stress timing;
+3. an empirical application template with explicit data-loading, catalog, and cache-refresh paths that is ready for disciplined use on real public datasets.
+
+It does not currently support causal attribution, structural macroeconomic estimation, deterministic-law claims, or exact crisis-date prediction. Those boundaries should remain explicit throughout the article.
 
 ## Introduction
 
-Econometric discussions of crises usually center on shocks, volatility, breaks, and regime changes. Those are essential objects. But they do not fully describe a practical question that matters in macro-financial stress: does an extreme event arrive as a one-off spike, or does the system keep returning to a dangerous region?
+Econometric analyses of stress usually center on shocks, volatility, breaks, and regime changes. Those are essential objects. The narrower question pursued here is different: when an extreme event occurs, is it better described as an isolated exceedance or as part of a recurring pattern of returns to a dangerous region?
 
 That distinction is central because social and financial damage is often driven less by one large observation than by recurrence and clustering. A single inflation surprise, one quarter of severe stress, or one volatility burst may be absorbed. Repeated returns to the same dangerous region are harder to absorb. They affect expectations, financing conditions, policy credibility, and the distribution of future risk.
 
