@@ -103,6 +103,28 @@ def test_run_empirical_experiment_supports_catalog_input(tmp_path) -> None:
     assert result.tables["empirical_panel"]["series_id"].tolist() == ["macro"] * 18
 
 
+def test_run_empirical_experiment_applies_direct_transformation(tmp_path) -> None:
+    csv_path = tmp_path / "prices.csv"
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=18, freq="ME"),
+            "value": [100.0 + i for i in range(18)],
+        }
+    ).to_csv(csv_path, index=False)
+    config = {
+        "experiment": {"name": "empirical_transform_test", "mode": "empirical"},
+        "empirical": {
+            "loader": "local_csv",
+            "path": str(csv_path),
+            "series_id": "macro",
+            "transformation": "pct_change",
+        },
+        "analysis": {"threshold_quantile": 0.8, "run_length": 2},
+    }
+    result = run_empirical_experiment(config)
+    assert len(result.tables["empirical_panel"]) == 17
+
+
 def test_run_synthetic_experiment_rejects_invalid_system() -> None:
     config = {
         "experiment": {"name": "bad_system", "mode": "synthetic"},

@@ -6,10 +6,12 @@ from dynsys_econometrics.data import (
     DataLoadFailure,
     load_ecb_sdw_csv,
     load_empirical_panel,
+    load_fred,
     load_fred_csv,
     load_oecd_csv,
     load_panel_from_directory,
     load_time_series_csv,
+    load_yfinance_series,
     load_world_bank_csv,
     materialize_catalog,
     validate_catalog,
@@ -151,6 +153,55 @@ def test_load_empirical_panel_supports_directory_loader(tmp_path) -> None:
     assert frame["series_id"].tolist() == ["a", "a", "b", "b"]
 
 
+def test_load_empirical_panel_applies_direct_transformation(tmp_path) -> None:
+    csv_path = tmp_path / "prices.csv"
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01", "2020-03-01"],
+            "value": [100.0, 110.0, 121.0],
+        }
+    ).to_csv(csv_path, index=False)
+
+    frame = load_empirical_panel(
+        {
+            "loader": "local_csv",
+            "path": str(csv_path),
+            "series_id": "equity",
+            "transformation": "log_return",
+        }
+    )
+    assert frame["series_id"].tolist() == ["equity", "equity"]
+    assert len(frame) == 2
+
+
+def test_load_fred_uses_cached_standard_panel(tmp_path) -> None:
+    cache_path = tmp_path / "fred_cache.csv"
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01"],
+            "series_id": ["UNRATE", "UNRATE"],
+            "value": [3.5, 3.6],
+        }
+    ).to_csv(cache_path, index=False)
+
+    frame = load_fred("UNRATE", cache_path=cache_path)
+    assert frame["series_id"].tolist() == ["UNRATE", "UNRATE"]
+
+
+def test_load_yfinance_uses_cached_standard_panel(tmp_path) -> None:
+    cache_path = tmp_path / "market_cache.csv"
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01"],
+            "series_id": ["SPY", "SPY"],
+            "value": [320.0, 330.0],
+        }
+    ).to_csv(cache_path, index=False)
+
+    frame = load_yfinance_series("SPY", cache_path=cache_path)
+    assert frame["series_id"].tolist() == ["SPY", "SPY"]
+
+
 def test_validate_catalog_accepts_example_mapping(tmp_path) -> None:
     catalog_path = tmp_path / "catalog.yaml"
     catalog_path.write_text(
@@ -192,6 +243,21 @@ def test_validate_catalog_requires_source_specific_fields(tmp_path) -> None:
     assert "requires field 'path'" in summary["errors"][0]
 
 
+def test_validate_catalog_rejects_missing_local_path(tmp_path) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: missing_series\n"
+        "    description: Missing file\n"
+        "    source: local_csv\n"
+        "    path: data/raw/not_here.csv\n",
+        encoding="utf-8",
+    )
+    summary = validate_catalog(catalog_path)
+    assert summary["valid"] is False
+    assert "path does not exist" in summary["errors"][0]
+
+
 def test_materialize_catalog_writes_transformed_panel(tmp_path) -> None:
     raw_path = tmp_path / "raw.csv"
     output_path = tmp_path / "processed.csv"
@@ -215,3 +281,26 @@ def test_materialize_catalog_writes_transformed_panel(tmp_path) -> None:
     panel = pd.read_csv(output_path)
     assert summary["n_rows"] == 2
     assert panel["series_id"].tolist() == ["equity", "equity"]
+
+
+def test_materialize_catalog_resolves_paths_relative_to_catalog(tmp_path) -> None:
+    data_dir = tmp_path / "nested" / "raw"
+    data_dir.mkdir(parents=True)
+    raw_path = data_dir / "series.csv"
+    raw_path.write_text("date,value\n2020-01-01,1.0\n2020-02-01,2.0\n", encoding="utf-8")
+    catalog_dir = tmp_path / "nested" / "configs"
+    catalog_dir.mkdir(parents=True)
+    catalog_path = catalog_dir / "catalog.yaml"
+    output_path = tmp_path / "panel.csv"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: relative_series\n"
+        "    description: Relative source\n"
+        "    source: local_csv\n"
+        "    path: ../raw/series.csv\n",
+        encoding="utf-8",
+    )
+    summary = materialize_catalog(catalog_path, output_path)
+    panel = pd.read_csv(output_path)
+    assert summary["n_rows"] == 2
+    assert panel["series_id"].tolist() == ["relative_series", "relative_series"]
