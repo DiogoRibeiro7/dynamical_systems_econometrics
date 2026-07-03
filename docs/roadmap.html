@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Validation Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Roadmap | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -66,19 +66,6 @@
         color: var(--accent);
       }
 
-      code,
-      pre {
-        font-family: "Courier New", monospace;
-      }
-
-      pre {
-        margin: 0;
-        overflow-x: auto;
-        padding: 16px;
-        background: #f3ede1;
-        border: 1px solid var(--line);
-      }
-
       .nav {
         display: flex;
         flex-wrap: wrap;
@@ -125,60 +112,49 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Validation guide</h1>
+        <h1>Roadmap</h1>
         <p>
-          This repository aims to be a credible research package rather than a
-          notebook dump. The validation surface therefore includes schema
-          contracts, hand-crafted mathematical tests, synthetic behavioral tests,
-          smoke entry-point tests, and quality gates for code style and typing.
+          This roadmap distinguishes what the repository already supports well
+          from what is planned and what should remain outside scope unless the
+          evidence and maintenance story become stronger.
         </p>
 
-        <h2>Core quality commands</h2>
-        <pre><code>pytest -q
-ruff check .
-mypy</code></pre>
-
-        <h2>What is tested directly</h2>
+        <h2>Already solid</h2>
         <ul>
-          <li>long-format and event-frame schema contracts</li>
-          <li>parameter validation for simulations</li>
-          <li>hand-crafted extremal and recurrence sequences</li>
-          <li>grouped transforms and baseline summaries</li>
-          <li>multivariate stress tables</li>
-          <li>experiment orchestration and wrapper entry points</li>
-          <li>plotting save paths and article-figure bundles</li>
+          <li>core package layout with reusable simulation, extremes, recurrence, and plotting modules</li>
+          <li>CLI and script entry points for synthetic workflows and article-facing figure generation</li>
+          <li>public documentation covering setup, commands, validation, results, and contribution rules</li>
+          <li>tests for contracts, edge cases, pipeline wrappers, and figure output behavior</li>
         </ul>
 
-        <h2>Test categories</h2>
+        <h2>Planned extensions</h2>
         <ul>
-          <li>contract tests: expected columns, duplicates, missingness, and invalid types</li>
-          <li>mathematical sanity tests: simple sequences with known answers</li>
-          <li>synthetic behavioral tests: broad qualitative expectations under fixed seeds</li>
-          <li>pipeline tests: CLI and script entry points that write real outputs</li>
-          <li>numerical edge cases: empty inputs, zero variance, invalid thresholds, and missing mappings</li>
+          <li>richer empirical data adapters with clearer provenance metadata</li>
+          <li>more comparative diagnostics between recurrence methods and baseline econometric summaries</li>
+          <li>additional article-quality figures that emphasize uncertainty and threshold sensitivity</li>
+          <li>stronger publication-facing packaging around claims traceability</li>
         </ul>
 
-        <h2>What tests do not prove</h2>
+        <h2>Needs caution before expansion</h2>
         <ul>
-          <li>stable asymptotic extreme-value behavior in short empirical samples</li>
-          <li>causal identification</li>
-          <li>that a synthetic benchmark is a realistic macroeconomic model</li>
-          <li>that a result derived from fallback synthetic data is empirical evidence</li>
+          <li>automated empirical narratives that read outputs as conclusions</li>
+          <li>large new model families without tests, contracts, and interpretation guidance</li>
+          <li>workflow growth that increases complexity faster than reproducibility coverage</li>
         </ul>
 
-        <h2>Interpretation rule</h2>
-        <p>
-          Passing tests means the repository is internally more reliable. It does
-          not mean that every substantive empirical interpretation is justified.
-          Those questions still depend on data quality, sample size, threshold
-          stability, and the supported-claim guardrails.
-        </p>
-
-        <h2>Repository references</h2>
+        <h2>Explicit non-goals for now</h2>
         <ul>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/validation_strategy.md">Validation strategy markdown</a></li>
-          <li><a href="https://github.com/DiogoRibeiro7/dynamical_systems_econometrics/blob/main/docs/numerical_stability.md">Numerical stability notes</a></li>
-          <li><a href="troubleshooting.html">Troubleshooting page</a></li>
+          <li>pretending fallback synthetic runs are substitutes for empirical validation</li>
+          <li>turning the repository into a general macroeconomic forecasting platform</li>
+          <li>adding dashboards or interfaces that outrun the underlying evidence quality</li>
+        </ul>
+
+        <h2>Related pages</h2>
+        <ul>
+          <li><a href="status.html">Project status</a></li>
+          <li><a href="results.html">Results guide</a></li>
+          <li><a href="contributing.html">Contributing guide</a></li>
+          <li><a href="research.html">Research guardrails</a></li>
         </ul>
       </section>
     </main>
