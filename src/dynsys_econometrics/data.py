@@ -440,7 +440,7 @@ def _default_series_col(path: str | Path, *, series_id: str | None, series_col: 
     return "series_id" if "series_id" in header.columns else None
 
 
-def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
+def load_empirical_panel(spec: Mapping[str, Any], *, force_refresh: bool = False) -> DataFrame:
     """Load an empirical panel from a structured loader configuration."""
     loader_config = dict(spec)
     catalog_entries = loader_config.get("catalogs", loader_config.get("catalog_paths"))
@@ -461,7 +461,7 @@ def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
                 merged_entry.update(mapped_entry)
             else:
                 raise DataLoadFailure("Each empirical catalog entry must be a path or a mapping.")
-            frames.append(load_empirical_panel(merged_entry))
+            frames.append(load_empirical_panel(merged_entry, force_refresh=force_refresh))
         return cast(
             DataFrame,
             pd.concat(frames, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True),
@@ -477,7 +477,7 @@ def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
             merged_entry = dict(loader_config)
             merged_entry.pop("series", None)
             merged_entry.update(dict(entry))
-            frames.append(load_empirical_panel(merged_entry))
+            frames.append(load_empirical_panel(merged_entry, force_refresh=force_refresh))
         return cast(
             DataFrame,
             pd.concat(frames, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True),
@@ -486,7 +486,7 @@ def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
     catalog_path = loader_config.get("catalog", loader_config.get("catalog_path"))
     if isinstance(catalog_path, (str, Path)):
         materialized_output = loader_config.get("output_path")
-        summary = materialize_catalog(catalog_path, materialized_output)
+        summary = materialize_catalog(catalog_path, materialized_output, force_refresh=force_refresh)
         output_path = summary.get("output_path")
         if isinstance(output_path, str):
             return _apply_catalog_transformation(load_time_series_csv(output_path, series_col="series_id"), transformation)
@@ -538,7 +538,7 @@ def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
                 str(series_id),
                 csv_path=csv_path,
                 cache_path=cast(str | Path | None, loader_config.get("cache_path")),
-                refresh=bool(loader_config.get("refresh", False)),
+                refresh=bool(loader_config.get("refresh", False) or force_refresh),
                 api_key=cast(str | None, loader_config.get("api_key")),
                 api_start=cast(str | None, loader_config.get("api_start")),
                 api_end=cast(str | None, loader_config.get("api_end")),
@@ -620,7 +620,7 @@ def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
                 end=cast(str | None, loader_config.get("end")),
                 value_col=str(loader_config.get("value_col", "Close")),
                 cache_path=cast(str | Path | None, loader_config.get("cache_path")),
-                refresh=bool(loader_config.get("refresh", False)),
+                refresh=bool(loader_config.get("refresh", False) or force_refresh),
             ),
             transformation,
         )
@@ -702,7 +702,12 @@ def _apply_catalog_transformation(frame: DataFrame, transformation: str | None) 
     return cast(DataFrame, result.sort_values(["series_id", "date"]).reset_index(drop=True))
 
 
-def materialize_catalog(path: str | Path, output_path: str | Path | None = None) -> dict[str, object]:
+def materialize_catalog(
+    path: str | Path,
+    output_path: str | Path | None = None,
+    *,
+    force_refresh: bool = False,
+) -> dict[str, object]:
     """Load a validated data catalog into a canonical processed panel."""
     catalog_path = Path(path)
     summary = validate_catalog(catalog_path)
@@ -714,7 +719,7 @@ def materialize_catalog(path: str | Path, output_path: str | Path | None = None)
     base_dir = catalog_path.resolve().parent
     for entry in _read_catalog_series(catalog_path):
         spec = _catalog_entry_to_loader_spec(entry, base_dir=base_dir)
-        frame = load_empirical_panel(spec)
+        frame = load_empirical_panel(spec, force_refresh=force_refresh)
         frames.append(_apply_catalog_transformation(frame, cast(str | None, entry.get("transformation"))))
 
     if not frames:
@@ -731,6 +736,35 @@ def materialize_catalog(path: str | Path, output_path: str | Path | None = None)
         "sources": summary["sources"],
         "valid": True,
         "errors": [],
+    }
+
+
+def refresh_empirical_cache(spec: Mapping[str, Any]) -> dict[str, object]:
+    """Refresh remote-backed empirical caches without running a full experiment."""
+    loader_config = dict(spec)
+    catalog_path = loader_config.get("catalog", loader_config.get("catalog_path"))
+    if isinstance(catalog_path, (str, Path)):
+        summary = materialize_catalog(
+            catalog_path,
+            loader_config.get("output_path"),
+            force_refresh=True,
+        )
+        targets = []
+        if summary.get("output_path") is not None:
+            targets.append(str(summary["output_path"]))
+        return {
+            "n_series": int(summary["n_series"]),
+            "n_rows": int(summary["n_rows"]),
+            "targets": targets,
+        }
+
+    panel = load_empirical_panel(loader_config, force_refresh=True)
+    cache_path = loader_config.get("cache_path")
+    targets = [str(cache_path)] if isinstance(cache_path, (str, Path)) else []
+    return {
+        "n_series": int(panel["series_id"].nunique()),
+        "n_rows": int(len(panel)),
+        "targets": targets,
     }
 
 

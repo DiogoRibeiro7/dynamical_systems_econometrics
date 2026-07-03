@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from dynsys_econometrics.config import load_config, resolve_output_dir
-from dynsys_econometrics.data import materialize_catalog, validate_catalog
+from dynsys_econometrics.data import materialize_catalog, refresh_empirical_cache, validate_catalog
 from dynsys_econometrics.experiments import (
     run_empirical_experiment,
     run_synthetic_experiment,
@@ -54,6 +54,9 @@ def main() -> None:
     empirical_parser = subparsers.add_parser("empirical", help="Run an empirical experiment config.")
     empirical_parser.add_argument("--config", default="configs/empirical.yaml", help="Path to empirical YAML config.")
 
+    refresh_parser = subparsers.add_parser("refresh-cache", help="Refresh cached remote empirical sources without running a full experiment.")
+    refresh_parser.add_argument("--config", default="configs/empirical_fred_refresh.yaml", help="Path to empirical YAML config.")
+
     catalog_parser = subparsers.add_parser("validate-catalog", help="Validate a public-data catalog.")
     catalog_parser.add_argument("--catalog", default="data/catalog.example.yaml", help="Path to catalog YAML.")
 
@@ -87,6 +90,17 @@ def main() -> None:
         save_experiment_result(result, output_dir)
         print(f"empirical_experiment={result.name}")
         print(f"output_dir={output_dir}")
+        return
+
+    if args.command == "refresh-cache":
+        config = load_config(args.config)
+        empirical = config.get("empirical", {})
+        summary = refresh_empirical_cache(empirical)
+        print(f"refresh_config={args.config}")
+        print(f"n_series={summary['n_series']}")
+        print(f"n_rows={summary['n_rows']}")
+        if summary["targets"]:
+            print(f"targets={','.join(summary['targets'])}")
         return
 
     if args.command == "validate-catalog":

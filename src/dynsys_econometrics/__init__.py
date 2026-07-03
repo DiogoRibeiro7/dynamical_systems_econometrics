@@ -21,6 +21,7 @@ from dynsys_econometrics.data import (
     load_world_bank_csv,
     load_yfinance_series,
     materialize_catalog,
+    refresh_empirical_cache,
     validate_catalog,
     write_processed_panel,
 )
@@ -122,6 +123,7 @@ __all__ = [
     "load_world_bank_csv",
     "load_yfinance_series",
     "materialize_catalog",
+    "refresh_empirical_cache",
     "logistic_map",
     "mean_excess_table",
     "peaks_over_threshold",

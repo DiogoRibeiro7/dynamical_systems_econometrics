@@ -18,6 +18,7 @@ from dynsys_econometrics.data import (
     load_yfinance_series,
     load_world_bank_csv,
     materialize_catalog,
+    refresh_empirical_cache,
     validate_catalog,
 )
 
@@ -488,3 +489,74 @@ def test_materialize_catalog_writes_yfinance_cache_path(tmp_path, monkeypatch) -
     assert cache_path.exists()
     cached = pd.read_csv(cache_path)
     assert cached["series_id"].tolist() == ["SPY", "SPY"]
+
+
+def test_refresh_empirical_cache_supports_direct_fred_loader(tmp_path, monkeypatch) -> None:
+    cache_path = tmp_path / "fred_cache.csv"
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            payload = {
+                "observations": [
+                    {"date": "2020-01-01", "value": "3.5"},
+                    {"date": "2020-02-01", "value": "3.6"},
+                ]
+            }
+            return json.dumps(payload).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    summary = refresh_empirical_cache(
+        {
+            "loader": "fred",
+            "series_id": "UNRATE",
+            "api_key": "demo",
+            "cache_path": str(cache_path),
+        }
+    )
+    assert summary["n_rows"] == 2
+    assert cache_path.exists()
+
+
+def test_refresh_empirical_cache_supports_catalog_path(tmp_path, monkeypatch) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    output_path = tmp_path / "panel.csv"
+    cache_path = tmp_path / "cache" / "fred_unrate.csv"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: UNRATE\n"
+        "    description: Cached unemployment example\n"
+        "    source: fred\n"
+        "    api_key: demo\n"
+        f"    cache_path: {cache_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            payload = {
+                "observations": [
+                    {"date": "2020-01-01", "value": "3.5"},
+                    {"date": "2020-02-01", "value": "3.6"},
+                ]
+            }
+            return json.dumps(payload).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    summary = refresh_empirical_cache({"catalog_path": str(catalog_path), "output_path": str(output_path)})
+    assert summary["n_rows"] == 2
+    assert output_path.exists()
+    assert cache_path.exists()

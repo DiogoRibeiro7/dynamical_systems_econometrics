@@ -78,6 +78,54 @@ def test_fetch_public_data_main_materializes_catalog(capsys, tmp_path: Path) -> 
     assert output_path.exists()
 
 
+def test_refresh_remote_cache_main_writes_cache(capsys, tmp_path: Path, monkeypatch) -> None:
+    module = _load_script_module("refresh_remote_cache.py")
+    cache_path = tmp_path / "fred_cache.csv"
+    config_path = tmp_path / "fred_refresh.yaml"
+    config_path.write_text(
+        "experiment:\n"
+        "  name: refresh_wrapper_test\n"
+        "  mode: empirical\n"
+        "empirical:\n"
+        "  loader: fred\n"
+        "  series_id: UNRATE\n"
+        "  api_key: demo\n"
+        f"  cache_path: {cache_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            return (
+                '{"observations": ['
+                '{"date": "2020-01-01", "value": "3.5"}, '
+                '{"date": "2020-02-01", "value": "3.6"}'
+                "]}"
+            ).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [
+            "refresh_remote_cache.py",
+            "--config",
+            str(config_path),
+        ]
+        module.main()
+    finally:
+        sys.argv = original_argv
+    captured = capsys.readouterr()
+    assert "n_rows=2" in captured.out
+    assert cache_path.exists()
+
+
 def test_run_experiment_main_writes_synthetic_outputs(capsys, tmp_path: Path) -> None:
     module = _load_script_module("run_experiment.py")
     config_path = tmp_path / "synthetic.yaml"

@@ -365,6 +365,58 @@ def test_package_cli_empirical_accepts_per_series_overrides(capsys, tmp_path: Pa
     assert (output_dir / "run_summary.json").exists()
 
 
+def test_package_cli_refresh_cache_runs(capsys, tmp_path: Path, monkeypatch) -> None:
+    module = importlib.import_module("dynsys_econometrics.__main__")
+    cache_path = tmp_path / "fred_cache.csv"
+    config_path = tmp_path / "fred_refresh.yaml"
+    config_path.write_text(
+        "experiment:\n"
+        "  name: cli_refresh_cache_test\n"
+        "  mode: empirical\n"
+        "empirical:\n"
+        "  loader: fred\n"
+        "  series_id: UNRATE\n"
+        "  api_key: demo\n"
+        f"  cache_path: {cache_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+
+    class _FakeResponse:
+        def __enter__(self):
+            return self
+
+        def __exit__(self, exc_type, exc, tb):
+            return None
+
+        def read(self):
+            payload = {
+                "observations": [
+                    {"date": "2020-01-01", "value": "3.5"},
+                    {"date": "2020-02-01", "value": "3.6"},
+                ]
+            }
+            import json
+
+            return json.dumps(payload).encode("utf-8")
+
+    monkeypatch.setattr("dynsys_econometrics.data.urlopen", lambda *args, **kwargs: _FakeResponse())
+
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [
+            "python -m dynsys_econometrics",
+            "refresh-cache",
+            "--config",
+            str(config_path),
+        ]
+        module.main()
+    finally:
+        sys.argv = original_argv
+    captured = capsys.readouterr()
+    assert "n_rows=2" in captured.out
+    assert cache_path.exists()
+
+
 def test_package_cli_empirical_accepts_multiple_catalogs(capsys, tmp_path: Path) -> None:
     module = importlib.import_module("dynsys_econometrics.__main__")
     first_raw = tmp_path / "first.csv"
