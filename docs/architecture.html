@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Glossary | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Architecture | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -41,8 +41,7 @@
       }
 
       h1,
-      h2,
-      dt {
+      h2 {
         line-height: 1.15;
       }
 
@@ -58,13 +57,26 @@
       }
 
       p,
-      dd {
+      li {
         color: var(--muted);
         line-height: 1.7;
       }
 
       a {
         color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
       }
 
       .nav {
@@ -82,17 +94,8 @@
         text-decoration: none;
       }
 
-      dl {
-        margin: 0;
-      }
-
-      dt {
-        margin-top: 18px;
-        font-weight: 700;
-      }
-
-      dd {
-        margin: 6px 0 0 0;
+      ul {
+        padding-left: 20px;
       }
     </style>
   </head>
@@ -126,61 +129,52 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Glossary</h1>
+        <h1>Architecture</h1>
         <p>
-          This glossary keeps the public docs consistent. The terms below are
-          used repeatedly across the repository and should be read in the same
-          way each time, especially when moving between methods, validation, and
-          research-interpretation pages.
+          The repository is organized as a reusable Python package with thin
+          workflow wrappers around it. The intent is to keep research logic in
+          importable modules, keep orchestration explicit, and keep article
+          outputs traceable back to code and configuration.
         </p>
 
-        <h2>Core terms</h2>
-        <dl>
-          <dt>Article-facing artifact</dt>
-          <dd>A named output, usually a figure or source CSV, intended to support drafting and review of the article materials.</dd>
+        <h2>Core layers</h2>
+        <ul>
+          <li><code>src/dynsys_econometrics/</code> contains reusable package logic for simulation, transforms, extremes, recurrence, econometrics, experiments, plotting, and contracts</li>
+          <li><code>scripts/</code> contains thin entry points for smoke runs, synthetic experiments, empirical runs, figure generation, and data fetching</li>
+          <li><code>configs/</code> contains workflow settings that define reproducible parameter bundles</li>
+          <li><code>tests/</code> contains contracts, edge-case checks, pipeline smoke coverage, and output-behavior tests</li>
+          <li><code>docs/</code> and <code>article/</code> contain public-facing documentation and writing-oriented assets</li>
+        </ul>
 
-          <dt>Benchmark</dt>
-          <dd>A controlled comparison used to inspect behavior, sensitivity, or implementation consistency rather than to prove empirical superiority.</dd>
+        <h2>Stable interfaces</h2>
+        <ul>
+          <li>normalized long-format data expectations such as <code>date, series_id, value</code></li>
+          <li>package-level workflows exposed through the CLI and documented scripts</li>
+          <li>named article-facing figure outputs and their paired CSV sources</li>
+        </ul>
 
-          <dt>Contract</dt>
-          <dd>An explicit expectation about columns, types, uniqueness, or required fields for inputs and outputs.</dd>
+        <h2>Less stable orchestration details</h2>
+        <ul>
+          <li>intermediate result folder structure may evolve as workflows become clearer</li>
+          <li>experimental comparison scripts may change more often than package contracts</li>
+          <li>empirical adapters may expand as provenance coverage improves</li>
+        </ul>
 
-          <dt>Empirical pipeline</dt>
-          <dd>A workflow that depends on configured public or external datasets rather than purely synthetic inputs.</dd>
-
-          <dt>Extremal index</dt>
-          <dd>A summary quantity used to describe the clustering of exceedances rather than only their marginal frequency.</dd>
-
-          <dt>Fallback synthetic data</dt>
-          <dd>A substitute input used to keep workflows runnable when real data is unavailable; useful operationally, but not empirical evidence.</dd>
-
-          <dt>Guardrail</dt>
-          <dd>A documented limit on what may be claimed or inferred from the repository’s current outputs.</dd>
-
-          <dt>Recurrence diagnostic</dt>
-          <dd>A method or summary based on revisit structure, return times, or related dynamical-systems-inspired behavior.</dd>
-
-          <dt>Stable artifact</dt>
-          <dd>An output or interface that the repository intentionally supports and expects downstream users to rely on.</dd>
-
-          <dt>Threshold sensitivity</dt>
-          <dd>The extent to which a result changes when the exceedance cutoff or event definition is adjusted.</dd>
-        </dl>
+        <h2>Design rule</h2>
+        <p>
+          If logic is important enough to trust, test, or cite, it should live
+          in the package layer rather than only inside a notebook or an ad hoc
+          script. Scripts should mostly compose package functionality and write
+          named artifacts.
+        </p>
 
         <h2>Related pages</h2>
-        <dl>
-          <dt><a href="methods.html">Method notes</a></dt>
-          <dd>For estimator and workflow context.</dd>
-
-          <dt><a href="validation.html">Validation guide</a></dt>
-          <dd>For testing and quality language.</dd>
-
-          <dt><a href="results.html">Results guide</a></dt>
-          <dd>For artifact interpretation boundaries.</dd>
-
-          <dt><a href="research.html">Research guardrails</a></dt>
-          <dd>For claim discipline and evidence limits.</dd>
-        </dl>
+        <ul>
+          <li><a href="api.html">API reference</a></li>
+          <li><a href="commands.html">Command map</a></li>
+          <li><a href="workflow.html">Workflow guide</a></li>
+          <li><a href="reproducibility.html">Reproducibility guide</a></li>
+        </ul>
       </section>
     </main>
   </body>

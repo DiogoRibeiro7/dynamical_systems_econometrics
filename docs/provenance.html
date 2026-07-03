@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Glossary | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Data Provenance | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -41,8 +41,7 @@
       }
 
       h1,
-      h2,
-      dt {
+      h2 {
         line-height: 1.15;
       }
 
@@ -58,7 +57,7 @@
       }
 
       p,
-      dd {
+      li {
         color: var(--muted);
         line-height: 1.7;
       }
@@ -82,17 +81,8 @@
         text-decoration: none;
       }
 
-      dl {
-        margin: 0;
-      }
-
-      dt {
-        margin-top: 18px;
-        font-weight: 700;
-      }
-
-      dd {
-        margin: 6px 0 0 0;
+      ul {
+        padding-left: 20px;
       }
     </style>
   </head>
@@ -126,61 +116,57 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Glossary</h1>
+        <h1>Data provenance</h1>
         <p>
-          This glossary keeps the public docs consistent. The terms below are
-          used repeatedly across the repository and should be read in the same
-          way each time, especially when moving between methods, validation, and
-          research-interpretation pages.
+          The repository supports both configured public-data workflows and fully
+          synthetic fallback workflows. Those paths are operationally useful for
+          different reasons, but they must not be merged conceptually: one is
+          about evidence, the other is about reproducibility and method behavior.
         </p>
 
-        <h2>Core terms</h2>
-        <dl>
-          <dt>Article-facing artifact</dt>
-          <dd>A named output, usually a figure or source CSV, intended to support drafting and review of the article materials.</dd>
+        <h2>Input families</h2>
+        <ul>
+          <li>public or external macro-financial series fetched or prepared through configured loaders</li>
+          <li>bundled examples and catalogs that describe expected source structure</li>
+          <li>synthetic simulations used for smoke tests, benchmarks, and controlled comparisons</li>
+        </ul>
 
-          <dt>Benchmark</dt>
-          <dd>A controlled comparison used to inspect behavior, sensitivity, or implementation consistency rather than to prove empirical superiority.</dd>
+        <h2>Normalization rule</h2>
+        <p>
+          Regardless of source, loaders are expected to normalize data into a
+          stable long format such as <code>date, series_id, value</code>. That
+          keeps downstream diagnostics source-agnostic and easier to test.
+        </p>
 
-          <dt>Contract</dt>
-          <dd>An explicit expectation about columns, types, uniqueness, or required fields for inputs and outputs.</dd>
+        <h2>What provenance supports</h2>
+        <ul>
+          <li>tracing an artifact back to its source path, loader, and configuration</li>
+          <li>distinguishing empirical runs from synthetic fallbacks</li>
+          <li>checking whether a reported output should be treated as evidence or only as a workflow artifact</li>
+        </ul>
 
-          <dt>Empirical pipeline</dt>
-          <dd>A workflow that depends on configured public or external datasets rather than purely synthetic inputs.</dd>
+        <h2>What provenance does not solve by itself</h2>
+        <ul>
+          <li>sample-quality problems in the original source</li>
+          <li>threshold instability or estimator sensitivity</li>
+          <li>over-interpretation of visually compelling but weakly supported results</li>
+        </ul>
 
-          <dt>Extremal index</dt>
-          <dd>A summary quantity used to describe the clustering of exceedances rather than only their marginal frequency.</dd>
-
-          <dt>Fallback synthetic data</dt>
-          <dd>A substitute input used to keep workflows runnable when real data is unavailable; useful operationally, but not empirical evidence.</dd>
-
-          <dt>Guardrail</dt>
-          <dd>A documented limit on what may be claimed or inferred from the repository’s current outputs.</dd>
-
-          <dt>Recurrence diagnostic</dt>
-          <dd>A method or summary based on revisit structure, return times, or related dynamical-systems-inspired behavior.</dd>
-
-          <dt>Stable artifact</dt>
-          <dd>An output or interface that the repository intentionally supports and expects downstream users to rely on.</dd>
-
-          <dt>Threshold sensitivity</dt>
-          <dd>The extent to which a result changes when the exceedance cutoff or event definition is adjusted.</dd>
-        </dl>
+        <h2>Hard interpretation boundary</h2>
+        <p>
+          Synthetic fallback outputs are legitimate for testing and benchmarking.
+          They are not empirical evidence. If a result matters for a substantive
+          claim, the provenance chain must point to the configured real-data path
+          rather than to a convenience simulation.
+        </p>
 
         <h2>Related pages</h2>
-        <dl>
-          <dt><a href="methods.html">Method notes</a></dt>
-          <dd>For estimator and workflow context.</dd>
-
-          <dt><a href="validation.html">Validation guide</a></dt>
-          <dd>For testing and quality language.</dd>
-
-          <dt><a href="results.html">Results guide</a></dt>
-          <dd>For artifact interpretation boundaries.</dd>
-
-          <dt><a href="research.html">Research guardrails</a></dt>
-          <dd>For claim discipline and evidence limits.</dd>
-        </dl>
+        <ul>
+          <li><a href="data.html">Data guide</a></li>
+          <li><a href="results.html">Results guide</a></li>
+          <li><a href="research.html">Research guardrails</a></li>
+          <li><a href="reproducibility.html">Reproducibility guide</a></li>
+        </ul>
       </section>
     </main>
   </body>
