@@ -308,3 +308,58 @@ def test_package_cli_empirical_accepts_direct_transformation(capsys, tmp_path: P
     captured = capsys.readouterr()
     assert "cli_empirical_transform_test" in captured.out
     assert (output_dir / "run_summary.json").exists()
+
+
+def test_package_cli_empirical_accepts_per_series_overrides(capsys, tmp_path: Path) -> None:
+    module = importlib.import_module("dynsys_econometrics.__main__")
+    prices_path = tmp_path / "prices.csv"
+    inflation_path = tmp_path / "inflation.csv"
+    output_dir = tmp_path / "empirical_multi_series_outputs"
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=24, freq="ME"),
+            "value": [100.0 + i for i in range(24)],
+        }
+    ).to_csv(prices_path, index=False)
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=24, freq="ME"),
+            "value": [2.0 + 0.1 * i for i in range(24)],
+        }
+    ).to_csv(inflation_path, index=False)
+    config_path = tmp_path / "empirical_multi_series.yaml"
+    config_path.write_text(
+        "experiment:\n"
+        "  name: cli_empirical_multi_series_test\n"
+        "  mode: empirical\n"
+        "empirical:\n"
+        "  series:\n"
+        "    - loader: local_csv\n"
+        f"      path: {prices_path.as_posix()}\n"
+        "      series_id: equity\n"
+        "      transformation: pct_change\n"
+        "    - loader: local_csv\n"
+        f"      path: {inflation_path.as_posix()}\n"
+        "      series_id: inflation\n"
+        "      transformation: level\n"
+        "analysis:\n"
+        "  threshold_quantile: 0.9\n"
+        "  run_length: 2\n"
+        "outputs:\n"
+        f"  directory: {output_dir.as_posix()}\n",
+        encoding="utf-8",
+    )
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [
+            "python -m dynsys_econometrics",
+            "empirical",
+            "--config",
+            str(config_path),
+        ]
+        module.main()
+    finally:
+        sys.argv = original_argv
+    captured = capsys.readouterr()
+    assert "cli_empirical_multi_series_test" in captured.out
+    assert (output_dir / "run_summary.json").exists()

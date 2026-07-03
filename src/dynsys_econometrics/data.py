@@ -443,6 +443,22 @@ def _default_series_col(path: str | Path, *, series_id: str | None, series_col: 
 def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
     """Load an empirical panel from a structured loader configuration."""
     loader_config = dict(spec)
+    series_entries = loader_config.get("series")
+    if isinstance(series_entries, list):
+        if len(series_entries) == 0:
+            raise DataLoadFailure("Empirical multi-series loader requires a non-empty `series` list.")
+        frames: list[DataFrame] = []
+        for entry in series_entries:
+            if not isinstance(entry, Mapping):
+                raise DataLoadFailure("Each empirical series entry must be a mapping.")
+            merged_entry = dict(loader_config)
+            merged_entry.pop("series", None)
+            merged_entry.update(dict(entry))
+            frames.append(load_empirical_panel(merged_entry))
+        return cast(
+            DataFrame,
+            pd.concat(frames, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True),
+        )
     transformation = cast(str | None, loader_config.get("transformation"))
     catalog_path = loader_config.get("catalog", loader_config.get("catalog_path"))
     if isinstance(catalog_path, (str, Path)):

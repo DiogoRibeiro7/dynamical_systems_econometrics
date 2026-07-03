@@ -174,6 +174,43 @@ def test_load_empirical_panel_applies_direct_transformation(tmp_path) -> None:
     assert len(frame) == 2
 
 
+def test_load_empirical_panel_supports_per_series_overrides(tmp_path) -> None:
+    prices_path = tmp_path / "prices.csv"
+    inflation_path = tmp_path / "inflation.csv"
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01", "2020-03-01"],
+            "value": [100.0, 110.0, 121.0],
+        }
+    ).to_csv(prices_path, index=False)
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01", "2020-03-01"],
+            "value": [1.8, 2.0, 2.1],
+        }
+    ).to_csv(inflation_path, index=False)
+
+    frame = load_empirical_panel(
+        {
+            "series": [
+                {
+                    "loader": "local_csv",
+                    "path": str(prices_path),
+                    "series_id": "equity",
+                    "transformation": "log_return",
+                },
+                {
+                    "loader": "local_csv",
+                    "path": str(inflation_path),
+                    "series_id": "inflation",
+                    "transformation": "level",
+                },
+            ]
+        }
+    )
+    assert frame["series_id"].tolist() == ["equity", "equity", "inflation", "inflation", "inflation"]
+
+
 def test_load_fred_uses_cached_standard_panel(tmp_path) -> None:
     cache_path = tmp_path / "fred_cache.csv"
     pd.DataFrame(

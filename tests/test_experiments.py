@@ -125,6 +125,45 @@ def test_run_empirical_experiment_applies_direct_transformation(tmp_path) -> Non
     assert len(result.tables["empirical_panel"]) == 17
 
 
+def test_run_empirical_experiment_supports_per_series_overrides(tmp_path) -> None:
+    prices_path = tmp_path / "prices.csv"
+    inflation_path = tmp_path / "inflation.csv"
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=18, freq="ME"),
+            "value": [100.0 + i for i in range(18)],
+        }
+    ).to_csv(prices_path, index=False)
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=18, freq="ME"),
+            "value": [2.0 + 0.1 * i for i in range(18)],
+        }
+    ).to_csv(inflation_path, index=False)
+    config = {
+        "experiment": {"name": "empirical_multi_series_test", "mode": "empirical"},
+        "empirical": {
+            "series": [
+                {
+                    "loader": "local_csv",
+                    "path": str(prices_path),
+                    "series_id": "equity",
+                    "transformation": "pct_change",
+                },
+                {
+                    "loader": "local_csv",
+                    "path": str(inflation_path),
+                    "series_id": "inflation",
+                    "transformation": "level",
+                },
+            ]
+        },
+        "analysis": {"threshold_quantile": 0.8, "run_length": 2},
+    }
+    result = run_empirical_experiment(config)
+    assert set(result.tables["empirical_panel"]["series_id"]) == {"equity", "inflation"}
+
+
 def test_run_synthetic_experiment_rejects_invalid_system() -> None:
     config = {
         "experiment": {"name": "bad_system", "mode": "synthetic"},
