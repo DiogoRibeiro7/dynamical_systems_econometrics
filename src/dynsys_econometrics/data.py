@@ -4,10 +4,11 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Iterable, Sequence, cast
+from typing import Any, Iterable, Mapping, Sequence, cast
 from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 
+import numpy as np
 import pandas as pd
 from pandas import DataFrame
 from pandas.errors import ParserError
@@ -413,6 +414,231 @@ def load_panel_from_directory(path: str | Path, pattern: str = "*.csv") -> TimeS
     return TimeSeriesFrame(frame=combined)
 
 
+def _default_series_col(path: str | Path, *, series_id: str | None, series_col: str | None) -> str | None:
+    if series_id is not None or series_col is not None:
+        return series_col
+    csv_path = Path(path)
+    if not csv_path.exists():
+        raise FileNotFoundError(f"CSV file not found: {csv_path}")
+    header = pd.read_csv(csv_path, nrows=0)
+    return "series_id" if "series_id" in header.columns else None
+
+
+def load_empirical_panel(spec: Mapping[str, Any]) -> DataFrame:
+    """Load an empirical panel from a structured loader configuration."""
+    loader_config = dict(spec)
+    catalog_path = loader_config.get("catalog", loader_config.get("catalog_path"))
+    if isinstance(catalog_path, (str, Path)):
+        materialized_output = loader_config.get("output_path")
+        summary = materialize_catalog(catalog_path, materialized_output)
+        output_path = summary.get("output_path")
+        if isinstance(output_path, str):
+            return load_time_series_csv(output_path, series_col="series_id")
+        raise DataLoadFailure("Catalog materialization did not return an output path.")
+    loader = str(loader_config.get("loader", "timeseries_csv")).strip().lower()
+    path = loader_config.get("path", loader_config.get("input_path"))
+
+    if loader in {"timeseries_csv", "csv", "canonical_csv", "local_csv"}:
+        if not isinstance(path, (str, Path)):
+            raise DataLoadFailure("Empirical CSV loader requires `path` or `input_path`.")
+        series_id_value = loader_config.get("series_id")
+        series_col_value = loader_config.get("series_col")
+        series_id = str(series_id_value) if series_id_value is not None else None
+        series_col = str(series_col_value) if series_col_value is not None else None
+        return load_time_series_csv(
+            path,
+            series_id=series_id,
+            date_col=str(loader_config.get("date_col", "date")),
+            value_col=str(loader_config.get("value_col", "value")),
+            series_col=_default_series_col(path, series_id=series_id, series_col=series_col),
+        )
+
+    if loader == "fred_csv":
+        if not isinstance(path, (str, Path)):
+            raise DataLoadFailure("FRED CSV loader requires `path`.")
+        series_id = loader_config.get("series_id")
+        if series_id is None:
+            raise DataLoadFailure("FRED CSV loader requires `series_id`.")
+        return load_fred_csv(
+            path,
+            series_id=str(series_id),
+            date_col=str(loader_config.get("date_col", "DATE")),
+            value_col=str(loader_config.get("value_col", "VALUE")),
+        )
+
+    if loader == "fred":
+        series_id = loader_config.get("series_id")
+        if series_id is None:
+            raise DataLoadFailure("FRED loader requires `series_id`.")
+        csv_path = loader_config.get("csv_path", path)
+        return load_fred(
+            str(series_id),
+            csv_path=csv_path,
+            api_key=cast(str | None, loader_config.get("api_key")),
+            api_start=cast(str | None, loader_config.get("api_start")),
+            api_end=cast(str | None, loader_config.get("api_end")),
+        )
+
+    if loader in {"ecb_sdw_csv", "ecb"}:
+        if not isinstance(path, (str, Path)):
+            raise DataLoadFailure("ECB SDW CSV loader requires `path`.")
+        series_id_value = loader_config.get("series_id")
+        return load_ecb_sdw_csv(
+            path,
+            series_id=str(series_id_value) if series_id_value is not None else None,
+            date_col=str(loader_config.get("date_col", "TIME_PERIOD")),
+            value_col=str(loader_config.get("value_col", "OBS_VALUE")),
+            series_col=str(loader_config.get("series_col", "SERIES")),
+        )
+
+    if loader in {"oecd_csv", "oecd"}:
+        if not isinstance(path, (str, Path)):
+            raise DataLoadFailure("OECD CSV loader requires `path`.")
+        series_id_value = loader_config.get("series_id")
+        return load_oecd_csv(
+            path,
+            series_id=str(series_id_value) if series_id_value is not None else None,
+            date_col=str(loader_config.get("date_col", "TIME")),
+            value_col=str(loader_config.get("value_col", "Value")),
+            series_col=str(loader_config.get("series_col", "SUBJECT")),
+        )
+
+    if loader in {"world_bank_csv", "world_bank"}:
+        if not isinstance(path, (str, Path)):
+            raise DataLoadFailure("World Bank CSV loader requires `path`.")
+        series_id_value = loader_config.get("series_id")
+        date_cols_value = loader_config.get("date_cols")
+        if date_cols_value is None:
+            date_cols: Sequence[str] | None = None
+        elif isinstance(date_cols_value, str):
+            date_cols = (date_cols_value,)
+        else:
+            date_cols = tuple(str(column) for column in date_cols_value)
+        return load_world_bank_csv(
+            path,
+            series_id=str(series_id_value) if series_id_value is not None else None,
+            date_cols=date_cols,
+        )
+
+    if loader in {"panel_directory", "directory"}:
+        directory = loader_config.get("directory", path)
+        if not isinstance(directory, (str, Path)):
+            raise DataLoadFailure("Directory loader requires `directory` or `path`.")
+        pattern = str(loader_config.get("pattern", "*.csv"))
+        return load_panel_from_directory(directory, pattern=pattern).to_frame()
+
+    if loader == "yfinance":
+        symbols_value = loader_config.get("symbols")
+        if symbols_value is None:
+            raise DataLoadFailure("yfinance loader requires `symbols`.")
+        if isinstance(symbols_value, str):
+            symbols: str | list[str] = symbols_value
+        else:
+            symbols = [str(symbol) for symbol in symbols_value]
+            if len(symbols) == 0:
+                raise DataLoadFailure("yfinance loader requires at least one symbol.")
+        return load_yfinance_series(
+            symbols,
+            start=cast(str | None, loader_config.get("start")),
+            end=cast(str | None, loader_config.get("end")),
+            value_col=str(loader_config.get("value_col", "Close")),
+        )
+
+    raise DataLoadFailure(
+        "Unsupported empirical loader. Use one of: timeseries_csv, fred_csv, fred, ecb_sdw_csv, "
+        "oecd_csv, world_bank_csv, panel_directory, yfinance."
+    )
+
+
+def _read_catalog_series(path: str | Path) -> list[dict[str, Any]]:
+    catalog_path = Path(path)
+    if not catalog_path.exists():
+        raise FileNotFoundError(f"Catalog not found: {catalog_path}")
+    payload = yaml.safe_load(catalog_path.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise DataLoadFailure("Catalog must be a mapping.")
+    series = payload.get("series", [])
+    if not isinstance(series, list):
+        raise DataLoadFailure("Catalog field 'series' must be a list.")
+    normalized: list[dict[str, Any]] = []
+    for idx, entry in enumerate(series):
+        if not isinstance(entry, dict):
+            raise DataLoadFailure(f"Entry {idx} is not a mapping.")
+        normalized.append(dict(entry))
+    return normalized
+
+
+def _catalog_entry_to_loader_spec(entry: Mapping[str, Any]) -> dict[str, Any]:
+    source = str(entry.get("source", "")).strip().lower()
+    spec = dict(entry)
+    if source in {"local_csv", "canonical_csv", "csv", "timeseries_csv"}:
+        spec["loader"] = "timeseries_csv"
+    elif source in {"fred_csv", "ecb_sdw_csv", "oecd_csv", "world_bank_csv", "panel_directory", "directory", "yfinance"}:
+        spec["loader"] = source
+    elif source == "ecb":
+        spec["loader"] = "ecb_sdw_csv"
+    elif source == "oecd":
+        spec["loader"] = "oecd_csv"
+    elif source == "world_bank":
+        spec["loader"] = "world_bank_csv"
+    elif source == "fred":
+        spec["loader"] = "fred"
+    else:
+        spec["loader"] = source
+    return spec
+
+
+def _apply_catalog_transformation(frame: DataFrame, transformation: str | None) -> DataFrame:
+    transform = "level" if transformation is None else str(transformation).strip().lower()
+    if transform in {"", "level"}:
+        return cast(DataFrame, frame.sort_values(["series_id", "date"]).reset_index(drop=True))
+
+    result = frame.copy()
+    if transform == "diff":
+        result["value"] = result.groupby("series_id")["value"].diff()
+    elif transform == "pct_change":
+        result["value"] = result.groupby("series_id")["value"].pct_change()
+    elif transform == "log_return":
+        if (result["value"] <= 0).any():
+            raise DataLoadFailure("log_return transformation requires strictly positive values.")
+        result["value"] = result.groupby("series_id")["value"].transform(lambda s: np.log(s).diff())
+    else:
+        raise DataLoadFailure(f"Unsupported catalog transformation: {transform}")
+
+    result = result.dropna(subset=["value"]).reset_index(drop=True)
+    return cast(DataFrame, result.sort_values(["series_id", "date"]).reset_index(drop=True))
+
+
+def materialize_catalog(path: str | Path, output_path: str | Path | None = None) -> dict[str, object]:
+    """Load a validated data catalog into a canonical processed panel."""
+    summary = validate_catalog(path)
+    if not bool(summary["valid"]):
+        errors = cast(list[str], summary["errors"])
+        raise DataLoadFailure("Catalog is invalid: " + "; ".join(errors))
+
+    frames: list[DataFrame] = []
+    for entry in _read_catalog_series(path):
+        spec = _catalog_entry_to_loader_spec(entry)
+        frame = load_empirical_panel(spec)
+        frames.append(_apply_catalog_transformation(frame, cast(str | None, entry.get("transformation"))))
+
+    if not frames:
+        raise DataLoadFailure("Catalog does not contain any series entries.")
+
+    panel = cast(DataFrame, pd.concat(frames, ignore_index=True).sort_values(["series_id", "date"]).reset_index(drop=True))
+    if output_path is not None:
+        write_processed_panel(panel, output_path)
+
+    return {
+        "n_series": int(panel["series_id"].nunique()),
+        "n_rows": int(len(panel)),
+        "output_path": None if output_path is None else str(Path(output_path)),
+        "sources": summary["sources"],
+        "valid": True,
+        "errors": [],
+    }
+
+
 def write_processed_panel(frame: TimeSeriesFrame | DataFrame, path: str | Path) -> None:
     """Write a validated processed panel to CSV."""
     output_path = Path(path)
@@ -423,27 +649,31 @@ def write_processed_panel(frame: TimeSeriesFrame | DataFrame, path: str | Path) 
 
 def validate_catalog(path: str | Path) -> dict[str, object]:
     """Validate a YAML data catalog and return a compact summary."""
-    catalog_path = Path(path)
-    if not catalog_path.exists():
-        raise FileNotFoundError(f"Catalog not found: {catalog_path}")
-    payload = yaml.safe_load(catalog_path.read_text(encoding="utf-8"))
-    if not isinstance(payload, dict):
-        raise DataLoadFailure("Catalog must be a mapping.")
-    series = payload.get("series", [])
-    if not isinstance(series, list):
-        raise DataLoadFailure("Catalog field 'series' must be a list.")
+    series = _read_catalog_series(path)
     required = {"series_id", "description", "source"}
     errors: list[str] = []
     sources: set[str] = set()
     for idx, entry in enumerate(series):
-        if not isinstance(entry, dict):
-            errors.append(f"Entry {idx} is not a mapping.")
-            continue
         missing = required.difference(entry)
         if missing:
             errors.append(f"Entry {idx} missing fields: {sorted(missing)}")
-        else:
-            sources.add(str(entry["source"]))
+            continue
+        source = str(entry["source"]).strip().lower()
+        sources.add(source)
+        if source in {"local_csv", "canonical_csv", "csv", "timeseries_csv", "fred_csv", "ecb_sdw_csv", "oecd_csv", "world_bank_csv"}:
+            if "path" not in entry:
+                errors.append(f"Entry {idx} source '{source}' requires field 'path'.")
+        elif source in {"panel_directory", "directory"}:
+            if "directory" not in entry and "path" not in entry:
+                errors.append(f"Entry {idx} source '{source}' requires field 'directory' or 'path'.")
+        elif source == "fred":
+            if "api_key" not in entry and "csv_path" not in entry and "path" not in entry:
+                errors.append(f"Entry {idx} source 'fred' requires one of: 'api_key', 'csv_path', or 'path'.")
+        elif source == "yfinance":
+            if "symbols" not in entry:
+                errors.append(f"Entry {idx} source 'yfinance' requires field 'symbols'.")
+        elif source not in {"ecb", "oecd", "world_bank"}:
+            errors.append(f"Entry {idx} has unsupported source: {source}")
     return {
         "n_series": len(series),
         "sources": sorted(sources),

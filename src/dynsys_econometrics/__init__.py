@@ -11,6 +11,7 @@ from dynsys_econometrics.contracts import EventFrame, ExperimentResult, TimeSeri
 from dynsys_econometrics.data import (
     DataLoadFailure,
     load_ecb_sdw_csv,
+    load_empirical_panel,
     load_fred,
     load_fred_csv,
     load_oecd_csv,
@@ -19,6 +20,7 @@ from dynsys_econometrics.data import (
     load_timeseries_csv,
     load_world_bank_csv,
     load_yfinance_series,
+    materialize_catalog,
     validate_catalog,
     write_processed_panel,
 )
@@ -110,6 +112,7 @@ __all__ = [
     "ks_exponential_diagnostic",
     "load_config",
     "load_ecb_sdw_csv",
+    "load_empirical_panel",
     "load_fred",
     "load_fred_csv",
     "load_oecd_csv",
@@ -118,6 +121,7 @@ __all__ = [
     "load_timeseries_csv",
     "load_world_bank_csv",
     "load_yfinance_series",
+    "materialize_catalog",
     "logistic_map",
     "mean_excess_table",
     "peaks_over_threshold",

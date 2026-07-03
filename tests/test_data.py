@@ -4,13 +4,15 @@ import pandas as pd
 
 from dynsys_econometrics.data import (
     DataLoadFailure,
-    load_panel_from_directory,
     load_ecb_sdw_csv,
+    load_empirical_panel,
     load_fred_csv,
     load_oecd_csv,
+    load_panel_from_directory,
     load_time_series_csv,
-    validate_catalog,
     load_world_bank_csv,
+    materialize_catalog,
+    validate_catalog,
 )
 
 
@@ -120,6 +122,35 @@ def test_load_panel_from_directory_combines_files(tmp_path) -> None:
     assert panel["series_id"].tolist() == ["a", "a", "b", "b"]
 
 
+def test_load_empirical_panel_supports_fred_csv_loader(tmp_path) -> None:
+    csv_path = tmp_path / "fred.csv"
+    pd.DataFrame({"DATE": ["2020-01-01", "2020-02-01"], "VALUE": [1.2, 2.4]}).to_csv(csv_path, index=False)
+
+    frame = load_empirical_panel({"loader": "fred_csv", "path": str(csv_path), "series_id": "UNRATE"})
+    assert frame["series_id"].tolist() == ["UNRATE", "UNRATE"]
+
+
+def test_load_empirical_panel_supports_directory_loader(tmp_path) -> None:
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-01-02"],
+            "series_id": ["a", "a"],
+            "value": [1.0, 2.0],
+        }
+    ).to_csv(tmp_path / "a.csv", index=False)
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-01-02"],
+            "series_id": ["b", "b"],
+            "value": [3.0, 4.0],
+        }
+    ).to_csv(tmp_path / "b.csv", index=False)
+
+    frame = load_empirical_panel({"loader": "panel_directory", "directory": str(tmp_path)})
+    assert frame.shape == (4, 3)
+    assert frame["series_id"].tolist() == ["a", "a", "b", "b"]
+
+
 def test_validate_catalog_accepts_example_mapping(tmp_path) -> None:
     catalog_path = tmp_path / "catalog.yaml"
     catalog_path.write_text(
@@ -145,3 +176,42 @@ def test_validate_catalog_reports_missing_fields(tmp_path) -> None:
     summary = validate_catalog(catalog_path)
     assert summary["valid"] is False
     assert len(summary["errors"]) == 1
+
+
+def test_validate_catalog_requires_source_specific_fields(tmp_path) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: broken_series\n"
+        "    description: Missing local path\n"
+        "    source: local_csv\n",
+        encoding="utf-8",
+    )
+    summary = validate_catalog(catalog_path)
+    assert summary["valid"] is False
+    assert "requires field 'path'" in summary["errors"][0]
+
+
+def test_materialize_catalog_writes_transformed_panel(tmp_path) -> None:
+    raw_path = tmp_path / "raw.csv"
+    output_path = tmp_path / "processed.csv"
+    pd.DataFrame(
+        {
+            "date": ["2020-01-01", "2020-02-01", "2020-03-01"],
+            "value": [100.0, 110.0, 121.0],
+        }
+    ).to_csv(raw_path, index=False)
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: equity\n"
+        "    description: Equity prices\n"
+        "    source: local_csv\n"
+        f"    path: {raw_path.as_posix()}\n"
+        "    transformation: log_return\n",
+        encoding="utf-8",
+    )
+    summary = materialize_catalog(catalog_path, output_path)
+    panel = pd.read_csv(output_path)
+    assert summary["n_rows"] == 2
+    assert panel["series_id"].tolist() == ["equity", "equity"]

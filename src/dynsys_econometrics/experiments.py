@@ -10,7 +10,7 @@ import pandas as pd
 
 from dynsys_econometrics.config import resolve_output_dir
 from dynsys_econometrics.contracts import ExperimentResult
-from dynsys_econometrics.data import load_time_series_csv
+from dynsys_econometrics.data import load_empirical_panel
 from dynsys_econometrics.extremes import runs_extremal_index, threshold_exceedances
 from dynsys_econometrics.plots import plot_extremal_index_bars
 from dynsys_econometrics.return_times import return_times
@@ -132,21 +132,28 @@ def run_synthetic_experiment(config: Mapping[str, Any]) -> ExperimentResult:
 
 
 def run_empirical_experiment(config: Mapping[str, Any]) -> ExperimentResult:
-    """Run an empirical experiment on a local canonical CSV input."""
+    """Run an empirical experiment from a structured loader configuration."""
     experiment_config = dict(config)
     experiment = experiment_config.get("experiment", {})
     analysis = experiment_config.get("analysis", {})
     empirical = experiment_config.get("empirical", {})
+    if not isinstance(empirical, Mapping):
+        raise ValueError("empirical configuration must be a mapping.")
     name = str(experiment.get("name", "empirical_experiment"))
-    input_path = empirical.get("input_path")
-    if not isinstance(input_path, (str, Path)):
-        raise ValueError("empirical.input_path must point to a local canonical CSV file.")
-    panel = load_time_series_csv(Path(input_path), series_col="series_id" if "series_id" in pd.read_csv(input_path, nrows=1).columns else None)
+    panel = load_empirical_panel(empirical)
     threshold_quantile = float(analysis.get("threshold_quantile", 0.95))
     run_length = int(analysis.get("run_length", 3))
+    min_observations = int(analysis.get("min_observations", 0))
     events = threshold_exceedances(panel, quantile=threshold_quantile)
     extremal_index = runs_extremal_index(events, run_length=run_length)
     durations = return_times(events)
+    warnings: list[str] = []
+    if min_observations > 0:
+        counts = panel.groupby("series_id").size()
+        underpowered = counts[counts < min_observations]
+        if not underpowered.empty:
+            summary = ", ".join(f"{series_id}={int(count)}" for series_id, count in underpowered.items())
+            warnings.append(f"series below min_observations={min_observations}: {summary}")
     return ExperimentResult(
         name=name,
         config=dict(experiment_config),
@@ -161,7 +168,7 @@ def run_empirical_experiment(config: Mapping[str, Any]) -> ExperimentResult:
             "n_series": float(panel["series_id"].nunique()),
             "n_observations": float(len(panel)),
         },
-        warnings=[],
+        warnings=warnings,
     )
 
 

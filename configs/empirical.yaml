@@ -4,12 +4,13 @@ experiment:
   seed: 42
 
 empirical:
-  input_path: data/raw/macro_stress_example.csv
+  catalog_path: data/catalog.example.yaml
+  output_path: data/processed/catalog_panel.csv
 
 analysis:
   threshold_quantile: 0.95
   run_length: 3
-  min_observations: 100
+  min_observations: 24
 
 outputs:
   directory: outputs/empirical_macro_stress

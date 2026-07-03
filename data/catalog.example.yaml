@@ -1,12 +1,13 @@
 series:
-  - series_id: example_equity_returns
-    description: Example equity return series
+  - series_id: example_equity_index
+    description: Example equity index level series
     source: local_csv
-    path: data/raw/example_equity_returns.csv
+    path: data/raw/example_equity_index.csv
     frequency: monthly
     transformation: log_return
   - series_id: example_inflation
     description: Example inflation series
-    source: fred
+    source: local_csv
+    path: data/raw/example_inflation.csv
     frequency: monthly
     transformation: level

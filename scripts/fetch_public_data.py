@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 
-from dynsys_econometrics.data import validate_catalog
+from dynsys_econometrics.data import materialize_catalog, validate_catalog
 
 
 def main() -> None:
@@ -15,7 +15,20 @@ def main() -> None:
         default="data/catalog.example.yaml",
         help="Path to the YAML catalog file.",
     )
+    parser.add_argument(
+        "--output",
+        default=None,
+        help="Optional output CSV path. When provided, the catalog is materialized into a canonical panel.",
+    )
     args = parser.parse_args()
+    if args.output:
+        summary = materialize_catalog(args.catalog, args.output)
+        print(f"catalog={args.catalog}")
+        print(f"output={summary['output_path']}")
+        print(f"n_rows={summary['n_rows']}")
+        print(f"n_series={summary['n_series']}")
+        return
+
     summary = validate_catalog(args.catalog)
     print(f"catalog={args.catalog}")
     print(f"n_series={summary['n_series']}")

@@ -8,7 +8,7 @@ from pathlib import Path
 import numpy as np
 
 from dynsys_econometrics.config import load_config, resolve_output_dir
-from dynsys_econometrics.data import validate_catalog
+from dynsys_econometrics.data import materialize_catalog, validate_catalog
 from dynsys_econometrics.experiments import (
     run_empirical_experiment,
     run_synthetic_experiment,
@@ -57,6 +57,10 @@ def main() -> None:
     catalog_parser = subparsers.add_parser("validate-catalog", help="Validate a public-data catalog.")
     catalog_parser.add_argument("--catalog", default="data/catalog.example.yaml", help="Path to catalog YAML.")
 
+    materialize_parser = subparsers.add_parser("materialize-catalog", help="Load a public-data catalog into a canonical panel.")
+    materialize_parser.add_argument("--catalog", default="data/catalog.example.yaml", help="Path to catalog YAML.")
+    materialize_parser.add_argument("--output", default="data/processed/catalog_panel.csv", help="Output CSV path.")
+
     args = parser.parse_args()
 
     if args.command is None:
@@ -90,6 +94,14 @@ def main() -> None:
         print(f"catalog={args.catalog}")
         print(f"n_series={summary['n_series']}")
         print(f"valid={summary['valid']}")
+        return
+
+    if args.command == "materialize-catalog":
+        summary = materialize_catalog(Path(args.catalog), args.output)
+        print(f"catalog={args.catalog}")
+        print(f"output={summary['output_path']}")
+        print(f"n_rows={summary['n_rows']}")
+        print(f"n_series={summary['n_series']}")
         return
 
 

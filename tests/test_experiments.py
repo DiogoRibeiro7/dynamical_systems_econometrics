@@ -56,6 +56,53 @@ def test_run_empirical_experiment_uses_local_csv(tmp_path) -> None:
     assert "empirical_panel" in result.tables
 
 
+def test_run_empirical_experiment_supports_loader_mapping_and_warnings(tmp_path) -> None:
+    csv_path = tmp_path / "fred.csv"
+    pd.DataFrame(
+        {
+            "DATE": pd.date_range("2020-01-31", periods=12, freq="ME"),
+            "VALUE": list(range(12)),
+        }
+    ).to_csv(csv_path, index=False)
+    config = {
+        "experiment": {"name": "empirical_loader_test", "mode": "empirical"},
+        "empirical": {"loader": "fred_csv", "path": str(csv_path), "series_id": "UNRATE"},
+        "analysis": {"threshold_quantile": 0.8, "run_length": 2, "min_observations": 24},
+    }
+    result = run_empirical_experiment(config)
+    assert result.tables["empirical_panel"]["series_id"].tolist() == ["UNRATE"] * 12
+    assert len(result.warnings) == 1
+    assert "min_observations=24" in result.warnings[0]
+
+
+def test_run_empirical_experiment_supports_catalog_input(tmp_path) -> None:
+    raw_path = tmp_path / "catalog_source.csv"
+    materialized_path = tmp_path / "catalog_panel.csv"
+    pd.DataFrame(
+        {
+            "date": pd.date_range("2020-01-31", periods=18, freq="ME"),
+            "value": list(range(1, 19)),
+        }
+    ).to_csv(raw_path, index=False)
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: macro\n"
+        "    description: Macro proxy\n"
+        "    source: local_csv\n"
+        f"    path: {raw_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+    config = {
+        "experiment": {"name": "empirical_catalog_test", "mode": "empirical"},
+        "empirical": {"catalog_path": str(catalog_path), "output_path": str(materialized_path)},
+        "analysis": {"threshold_quantile": 0.8, "run_length": 2},
+    }
+    result = run_empirical_experiment(config)
+    assert "empirical_panel" in result.tables
+    assert result.tables["empirical_panel"]["series_id"].tolist() == ["macro"] * 18
+
+
 def test_run_synthetic_experiment_rejects_invalid_system() -> None:
     config = {
         "experiment": {"name": "bad_system", "mode": "synthetic"},
