@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Empirical Input Examples | Dynamical Systems, Rare Events, and Econometrics</title>
+    <style>
+      :root {
+        --bg: #f4f1e8;
+        --paper: #fffdf8;
+        --ink: #14213d;
+        --accent: #c45b12;
+        --muted: #5b6475;
+        --line: #d8cfbf;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        font-family: Georgia, "Times New Roman", serif;
+        background:
+          radial-gradient(circle at top right, rgba(196, 91, 18, 0.18), transparent 28%),
+          linear-gradient(180deg, #efe8d8 0%, var(--bg) 50%, #ece4d1 100%);
+        color: var(--ink);
+      }
+
+      main {
+        max-width: 980px;
+        margin: 0 auto;
+        padding: 32px 20px 64px;
+      }
+
+      .panel {
+        background: var(--paper);
+        border: 1px solid var(--line);
+        padding: 32px;
+        box-shadow: 0 18px 60px rgba(20, 33, 61, 0.08);
+      }
+
+      h1,
+      h2 {
+        line-height: 1.15;
+      }
+
+      h1 {
+        margin: 0 0 12px;
+        font-size: clamp(2.2rem, 4vw, 3.8rem);
+      }
+
+      h2 {
+        margin-top: 28px;
+        margin-bottom: 10px;
+        font-size: 1.4rem;
+      }
+
+      p,
+      li {
+        color: var(--muted);
+        line-height: 1.7;
+      }
+
+      a {
+        color: var(--accent);
+      }
+
+      code,
+      pre {
+        font-family: "Courier New", monospace;
+      }
+
+      pre {
+        margin: 0;
+        overflow-x: auto;
+        padding: 16px;
+        background: #f3ede1;
+        border: 1px solid var(--line);
+      }
+
+      .nav {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+
+      .nav a {
+        display: inline-block;
+        padding: 8px 12px;
+        border: 1px solid var(--line);
+        background: rgba(255, 253, 248, 0.9);
+        text-decoration: none;
+      }
+
+      ul {
+        padding-left: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <nav class="nav">
+          <a href="index.html">Home</a>
+          <a href="commands.html">Commands</a>
+          <a href="data.html">Data</a>
+          <a href="configs.html">Configs</a>
+          <a href="methods.html">Methods</a>
+          <a href="examples.html">Examples</a>
+          <a href="validation.html">Validation</a>
+          <a href="results.html">Results</a>
+          <a href="architecture.html">Architecture</a>
+          <a href="provenance.html">Data provenance</a>
+        </nav>
+        <h1>Empirical input examples</h1>
+        <p>
+          The repository now supports several empirical input styles. This page
+          shows the intended examples and when each one is the right choice.
+        </p>
+
+        <h2>1. Multi-series local config</h2>
+        <p>
+          Use the default empirical config when you already have a few local
+          files and want explicit per-series transformations in one place.
+        </p>
+        <pre><code>python -m dynsys_econometrics empirical --config configs/empirical.yaml</code></pre>
+
+        <h2>2. Single catalog</h2>
+        <p>
+          Use a catalog when source metadata and transformations should travel
+          together. The repository example catalog is still the simplest
+          metadata-first path.
+        </p>
+        <pre><code>python -m dynsys_econometrics materialize-catalog --catalog data/catalog.example.yaml
+python -m dynsys_econometrics empirical --config configs/empirical.yaml</code></pre>
+
+        <h2>3. Multi-catalog config</h2>
+        <p>
+          Use multiple catalogs when source families are easier to maintain
+          separately but should still be analyzed together in one run.
+        </p>
+        <pre><code>python -m dynsys_econometrics empirical --config configs/empirical_multicatalog.yaml</code></pre>
+
+        <h2>4. Cached FRED config</h2>
+        <p>
+          Use a cached FRED config when you want an offline-first empirical path
+          that can refresh a canonical cache deliberately instead of silently
+          depending on network access every run.
+        </p>
+        <pre><code>python -m dynsys_econometrics empirical --config configs/empirical_fred_cached.yaml</code></pre>
+
+        <h2>5. Cached yfinance config</h2>
+        <p>
+          Use a cached market-data config when you want the same offline-first
+          discipline for price proxies or ETF-style stress indicators.
+        </p>
+        <pre><code>python -m dynsys_econometrics empirical --config configs/empirical_yfinance_cached.yaml</code></pre>
+
+        <h2>Interpretation rule</h2>
+        <ul>
+          <li>local examples are for structure and reproducibility</li>
+          <li>cached remote configs are for controlled refresh workflows</li>
+          <li>synthetic or fallback paths are not empirical evidence</li>
+        </ul>
+      </section>
+    </main>
+  </body>
+</html>

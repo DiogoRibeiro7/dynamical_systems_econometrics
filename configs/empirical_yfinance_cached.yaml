@@ -1,0 +1,19 @@
+experiment:
+  name: empirical_yfinance_cached_example
+  mode: empirical
+  seed: 42
+
+empirical:
+  loader: yfinance
+  symbols:
+    - SPY
+  cache_path: data/processed/yfinance_spy_cached.csv
+  transformation: pct_change
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 24
+
+outputs:
+  directory: outputs/empirical_yfinance_cached_example

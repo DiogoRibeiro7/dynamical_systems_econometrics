@@ -1,0 +1,18 @@
+experiment:
+  name: empirical_fred_cached_example
+  mode: empirical
+  seed: 42
+
+empirical:
+  loader: fred
+  series_id: UNRATE
+  cache_path: data/processed/fred_unrate_cached.csv
+  transformation: level
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 24
+
+outputs:
+  directory: outputs/empirical_fred_cached_example
