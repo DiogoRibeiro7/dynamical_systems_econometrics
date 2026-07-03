@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Config Guide | Dynamical Systems, Rare Events, and Econometrics</title>
+    <title>Benchmarks | Dynamical Systems, Rare Events, and Econometrics</title>
     <style>
       :root {
         --bg: #f4f1e8;
@@ -126,71 +126,56 @@
           <a href="research.html">Guardrails</a>
           <a href="reproducibility.html">Reproducibility</a>
         </nav>
-        <h1>Config guide</h1>
+        <h1>Benchmarks</h1>
         <p>
-          The repository uses small YAML files to separate experiment settings
-          from code. The main split is between synthetic and empirical runs,
-          with separate output directories and optional figure-specific settings.
+          Benchmarks in this repository are meant to compare workflows and
+          estimators under controlled conditions. They are useful for checking
+          consistency, sensitivity, and failure modes, but they are not a license
+          to overstate out-of-sample economic meaning.
         </p>
 
-        <h2>Config files in the repository</h2>
+        <h2>Useful benchmark targets</h2>
         <ul>
-          <li><code>configs/default.yaml</code>: baseline project, analysis, plot, and output defaults</li>
-          <li><code>configs/synthetic.yaml</code>: synthetic experiment example</li>
-          <li><code>configs/empirical.yaml</code>: empirical experiment example</li>
-          <li><code>configs/figures.yaml</code>: article-figure configuration surface</li>
-          <li><code>configs/experiment.yaml</code>: earlier repository experiment stub retained for compatibility</li>
+          <li>synthetic systems with known structure and fixed seeds</li>
+          <li>comparisons between recurrence diagnostics and simpler baseline summaries</li>
+          <li>threshold sensitivity across the same underlying series</li>
+          <li>output stability under small configuration changes</li>
         </ul>
 
-        <h2>Common structure</h2>
-        <pre><code>experiment:
-  name: synthetic_logistic_vs_ar1
-  mode: synthetic
+        <h2>Commands that typically generate benchmark-style artifacts</h2>
+        <pre><code>python scripts/run_smoke_experiment.py
+python scripts/run_synthetic_experiment.py
+python scripts/generate_article_figures.py</code></pre>
 
-analysis:
-  threshold_quantile: 0.95
-  run_length: 3
-
-outputs:
-  directory: outputs/synthetic_logistic_vs_ar1</code></pre>
-
-        <h2>Synthetic config sections</h2>
+        <h2>What benchmark comparisons can support</h2>
         <ul>
-          <li><code>experiment.name</code>: run label saved into the output summary</li>
-          <li><code>experiment.mode</code>: should be <code>synthetic</code></li>
-          <li><code>synthetic.systems</code>: list of benchmark systems such as logistic, AR(1), or GARCH</li>
-          <li><code>analysis.threshold_quantile</code>: event threshold definition</li>
-          <li><code>analysis.run_length</code>: declustering gap for the runs estimator</li>
-          <li><code>outputs.directory</code>: output folder for tables, figures, and JSON summary</li>
+          <li>whether one implementation is internally consistent with another diagnostic view</li>
+          <li>whether a method reacts plausibly to stronger clustering or heavier tails in synthetic settings</li>
+          <li>whether the package writes stable result bundles for downstream review</li>
         </ul>
 
-        <h2>Empirical config sections</h2>
+        <h2>What benchmark comparisons cannot support by themselves</h2>
         <ul>
-          <li><code>experiment.mode</code>: should be <code>empirical</code></li>
-          <li><code>empirical.input_path</code>: local canonical CSV in long format</li>
-          <li><code>analysis.*</code>: threshold and recurrence settings shared with synthetic runs</li>
-          <li><code>outputs.directory</code>: empirical run output folder</li>
+          <li>claims of empirical superiority on real macro-financial datasets</li>
+          <li>causal conclusions about crisis generation mechanisms</li>
+          <li>publication-grade evidence from a single synthetic scenario</li>
         </ul>
-
-        <h2>Figure and project defaults</h2>
-        <ul>
-          <li><code>project.seed</code>: reproducibility seed for configurable workflows</li>
-          <li><code>project.output_dir</code>: fallback output directory</li>
-          <li><code>plots.dpi</code>: figure resolution setting</li>
-          <li><code>plots.save_format</code>: default saved figure extension</li>
-        </ul>
-
-        <h2>Useful commands</h2>
-        <pre><code>python -m dynsys_econometrics synthetic --config configs/synthetic.yaml
-python -m dynsys_econometrics empirical --config configs/empirical.yaml
-python scripts/run_experiment.py --config configs/synthetic.yaml</code></pre>
 
         <h2>Interpretation rule</h2>
         <p>
-          Config files make workflows reproducible, but they do not turn
-          synthetic data into empirical evidence. Always distinguish the
-          configured run mode from the claims you make about the outputs.
+          Treat benchmarks as controlled checks on behavior, not as a substitute
+          for careful empirical validation. If a benchmark result is interesting,
+          the next step is usually stronger data provenance, uncertainty
+          treatment, and threshold robustness analysis.
         </p>
+
+        <h2>Related pages</h2>
+        <ul>
+          <li><a href="results.html">Results guide</a></li>
+          <li><a href="methods.html">Method notes</a></li>
+          <li><a href="validation.html">Validation guide</a></li>
+          <li><a href="research.html">Research guardrails</a></li>
+        </ul>
       </section>
     </main>
   </body>
