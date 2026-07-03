@@ -126,6 +126,53 @@ def test_refresh_remote_cache_main_writes_cache(capsys, tmp_path: Path, monkeypa
     assert cache_path.exists()
 
 
+def test_refresh_remote_cache_main_writes_yfinance_cache(capsys, tmp_path: Path, monkeypatch) -> None:
+    module = _load_script_module("refresh_remote_cache.py")
+    cache_path = tmp_path / "spy_cache.csv"
+    config_path = tmp_path / "yfinance_refresh.yaml"
+    config_path.write_text(
+        "experiment:\n"
+        "  name: refresh_yfinance_wrapper_test\n"
+        "  mode: empirical\n"
+        "empirical:\n"
+        "  loader: yfinance\n"
+        "  symbols:\n"
+        "    - SPY\n"
+        f"  cache_path: {cache_path.as_posix()}\n"
+        "  refresh: true\n"
+        "  transformation: pct_change\n",
+        encoding="utf-8",
+    )
+
+    import types
+
+    fake_module = types.SimpleNamespace()
+
+    def _download(**kwargs):
+        return pd.DataFrame(
+            {"Close": [320.0, 330.0]},
+            index=pd.to_datetime(["2020-01-01", "2020-02-01"]),
+        )
+
+    fake_module.download = _download
+    monkeypatch.setitem(sys.modules, "yfinance", fake_module)
+
+    original_argv = sys.argv[:]
+    try:
+        sys.argv = [
+            "refresh_remote_cache.py",
+            "--config",
+            str(config_path),
+        ]
+        module.main()
+    finally:
+        sys.argv = original_argv
+        sys.modules.pop("yfinance", None)
+    captured = capsys.readouterr()
+    assert "n_rows=1" in captured.out
+    assert cache_path.exists()
+
+
 def test_run_experiment_main_writes_synthetic_outputs(capsys, tmp_path: Path) -> None:
     module = _load_script_module("run_experiment.py")
     config_path = tmp_path / "synthetic.yaml"

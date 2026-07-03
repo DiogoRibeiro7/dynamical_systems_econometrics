@@ -1,0 +1,28 @@
+experiment:
+  name: empirical_multi_remote_refresh_example
+  mode: empirical
+  seed: 42
+
+empirical:
+  series:
+    - loader: fred
+      series_id: UNRATE
+      cache_path: data/processed/fred_unrate_cached.csv
+      refresh: true
+      # Replace with a real FRED API key before using this config.
+      api_key: REPLACE_WITH_FRED_API_KEY
+      transformation: level
+    - loader: yfinance
+      symbols:
+        - SPY
+      cache_path: data/processed/yfinance_spy_cached.csv
+      refresh: true
+      transformation: pct_change
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 24
+
+outputs:
+  directory: outputs/empirical_multi_remote_refresh_example
