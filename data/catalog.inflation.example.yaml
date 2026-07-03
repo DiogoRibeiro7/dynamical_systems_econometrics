@@ -1,0 +1,7 @@
+series:
+  - series_id: example_inflation
+    description: Example inflation series
+    source: local_csv
+    path: data/raw/example_inflation.csv
+    frequency: monthly
+    transformation: level

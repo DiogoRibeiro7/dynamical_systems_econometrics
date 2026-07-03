@@ -1,0 +1,17 @@
+experiment:
+  name: empirical_multi_catalog_example
+  mode: empirical
+  seed: 42
+
+empirical:
+  catalog_paths:
+    - data/catalog.equity.example.yaml
+    - data/catalog.inflation.example.yaml
+
+analysis:
+  threshold_quantile: 0.95
+  run_length: 3
+  min_observations: 24
+
+outputs:
+  directory: outputs/empirical_multi_catalog_example

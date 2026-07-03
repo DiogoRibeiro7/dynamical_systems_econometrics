@@ -1,0 +1,7 @@
+series:
+  - series_id: example_equity_index
+    description: Example equity index level series
+    source: local_csv
+    path: data/raw/example_equity_index.csv
+    frequency: monthly
+    transformation: log_return

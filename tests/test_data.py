@@ -337,6 +337,40 @@ def test_validate_catalog_rejects_missing_local_path(tmp_path) -> None:
     assert "path does not exist" in summary["errors"][0]
 
 
+def test_validate_catalog_rejects_conflicting_fred_fields(tmp_path) -> None:
+    csv_path = tmp_path / "fred.csv"
+    csv_path.write_text("DATE,VALUE\n2020-01-01,3.5\n", encoding="utf-8")
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: UNRATE\n"
+        "    description: Ambiguous fred entry\n"
+        "    source: fred\n"
+        "    api_key: demo\n"
+        f"    path: {csv_path.as_posix()}\n",
+        encoding="utf-8",
+    )
+    summary = validate_catalog(catalog_path)
+    assert summary["valid"] is False
+    assert "cannot combine 'api_key' with local CSV path fields" in summary["errors"][0]
+
+
+def test_validate_catalog_rejects_refresh_without_remote_requirements(tmp_path) -> None:
+    catalog_path = tmp_path / "catalog.yaml"
+    catalog_path.write_text(
+        "series:\n"
+        "  - series_id: SPY\n"
+        "    description: Refresh without cache path\n"
+        "    source: yfinance\n"
+        "    symbols: SPY\n"
+        "    refresh: true\n",
+        encoding="utf-8",
+    )
+    summary = validate_catalog(catalog_path)
+    assert summary["valid"] is False
+    assert "requires 'cache_path' when 'refresh: true' is requested" in summary["errors"][0]
+
+
 def test_materialize_catalog_writes_transformed_panel(tmp_path) -> None:
     raw_path = tmp_path / "raw.csv"
     output_path = tmp_path / "processed.csv"

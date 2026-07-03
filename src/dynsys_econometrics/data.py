@@ -773,16 +773,28 @@ def validate_catalog(path: str | Path) -> dict[str, object]:
                 if not resolved.exists():
                     errors.append(f"Entry {idx} directory does not exist: {directory_value}")
         elif source == "fred":
-            if "api_key" not in entry and "csv_path" not in entry and "path" not in entry and "cache_path" not in entry:
+            has_api_key = "api_key" in entry
+            has_csv_path = "csv_path" in entry
+            has_path = "path" in entry
+            has_cache_path = "cache_path" in entry
+            if not any((has_api_key, has_csv_path, has_path, has_cache_path)):
                 errors.append(f"Entry {idx} source 'fred' requires one of: 'api_key', 'csv_path', 'path', or 'cache_path'.")
-            elif "csv_path" in entry or "path" in entry or "cache_path" in entry:
+            if has_csv_path and has_path:
+                errors.append(f"Entry {idx} source 'fred' cannot define both 'csv_path' and 'path'.")
+            if has_api_key and (has_csv_path or has_path):
+                errors.append(f"Entry {idx} source 'fred' cannot combine 'api_key' with local CSV path fields.")
+            if bool(entry.get("refresh", False)) and not has_api_key:
+                errors.append(f"Entry {idx} source 'fred' requires 'api_key' when 'refresh: true' is requested.")
+            if has_csv_path or has_path or has_cache_path:
                 csv_value = entry.get("csv_path", entry.get("path", entry.get("cache_path")))
                 resolved = Path(_resolve_catalog_path_value(csv_value, base_dir=base_dir))
-                if "api_key" not in entry and not resolved.exists():
+                if not has_api_key and not resolved.exists():
                     errors.append(f"Entry {idx} csv path does not exist: {csv_value}")
         elif source == "yfinance":
             if "symbols" not in entry:
                 errors.append(f"Entry {idx} source 'yfinance' requires field 'symbols'.")
+            if bool(entry.get("refresh", False)) and "cache_path" not in entry:
+                errors.append(f"Entry {idx} source 'yfinance' requires 'cache_path' when 'refresh: true' is requested.")
             elif "cache_path" in entry:
                 cache_value = entry["cache_path"]
                 resolved = Path(_resolve_catalog_path_value(cache_value, base_dir=base_dir))
