@@ -8,12 +8,7 @@
 
 Standard econometric stress diagnostics usually measure the magnitude of variation, tail losses, or event frequency. They do not directly measure the temporal organization of extremes. That omission matters because two series can have similar volatility or similar exceedance counts while differing sharply in whether extreme observations arrive as isolated shocks or as clustered stress episodes.
 
-The paper argues that recurrence should be treated as a first-class stress object. The contribution is twofold:
-
-1. a serious methods contribution that integrates exceedance incidence, return times, runs-based clustering, multivariate stress activation, and volatility baselines in one reproducible workflow;
-2. a narrow theory contribution through a cluster-adjusted stress functional that scales exceedance incidence by clustering intensity.
-
-The claims are intentionally modest. The paper does not present a new asymptotic theory for extremal-index estimation, nor a structural macro-financial model. It provides a mathematically explicit and computationally reproducible bridge between dependent-extremes diagnostics and applied stress analysis.
+The paper argues that recurrence should be treated as a first-class stress object. The contribution is twofold, although the two parts are tightly connected rather than separable. On the methods side, the paper integrates exceedance incidence, return times, runs-based clustering, multivariate stress activation, and volatility baselines within one reproducible workflow. On the theory side, it introduces a cluster-adjusted stress functional that scales exceedance incidence by clustering intensity and therefore distinguishes between stress processes that generate similar event rates but different temporal concentration of extremes. The claims are intentionally modest. The paper does not present a new asymptotic theory for extremal-index estimation, nor does it offer a structural macro-financial model. Its aim is narrower and more concrete: to provide a mathematically explicit and computationally reproducible bridge between diagnostics for dependent extremes and the practical language of applied stress analysis.
 
 ## Research question
 
@@ -29,23 +24,23 @@ Sub-questions:
 
 ### 1. Extreme values under dependence
 
-The starting point is classical extreme-value theory for dependent sequences. Leadbetter, Lindgren, and Rootzen, Embrechts, Kluppelberg, and Mikosch, and Coles establish why tail behavior under dependence cannot be reduced to iid intuition. For the present paper, the key takeaway is that clustering changes the meaning of exceedance counts.
+The starting point is extreme-value theory for dependent sequences rather than iid tail analysis. Leadbetter, Lindgren, and Rootzen, together with Embrechts, Kluppelberg, and Mikosch and later expositions such as Coles, establish the central fact that temporal dependence changes the meaning of rare events. Once extremes cluster, an event count is no longer enough. The timing and grouping of exceedances become part of the statistical object that needs to be described.
 
 ### 2. Extremal index and clustering diagnostics
 
-O'Brien, Ferro and Segers, and Suveges provide the relevant theory and estimation strategies for clustering intensity in exceedance sequences. The paper does not improve those estimators. It uses a runs-based clustering coefficient as a practical ingredient in a recurrence-oriented stress workflow.
+O'Brien, Ferro and Segers, and Suveges provide the main theory and estimation strategies for clustering intensity in exceedance sequences. The present paper does not try to improve that literature internally. Instead, it borrows a runs-based clustering perspective and asks how such diagnostics should enter an applied stress-analysis workflow without remaining an isolated technical appendix.
 
 ### 3. Recurrence and return-time analysis
 
-The recurrence literature in stochastic and dynamical systems shows that return times and hitting times are structurally meaningful objects, not just descriptive curiosities. That literature motivates the use of inter-exceedance times as direct stress diagnostics.
+The recurrence literature in stochastic and dynamical systems treats return times and hitting times as structurally meaningful quantities. That matters here because applied stress narratives often talk about repeated crises or renewed distress without translating those intuitions into estimable objects. The return-time literature provides exactly that missing conceptual discipline.
 
 ### 4. Volatility econometrics and tail-risk baselines
 
-ARCH and GARCH models remain essential for changing second-moment conditions. Tail-risk and systemic-risk measures such as CoVaR, SRISK, and related capital-shortfall metrics quantify severity and cross-sectional dependence. The paper does not reject those tools. It argues that they answer a different question from recurrence.
+ARCH and GARCH models remain essential for changing second-moment conditions, while tail-risk and systemic-risk measures such as CoVaR, SRISK, and related capital-shortfall metrics quantify severity and cross-sectional dependence. The paper does not reject those tools. It argues that they answer a different question. Volatility and tail-loss measures speak to scale and exposure; recurrence diagnostics speak to how stress is organized through time once threshold-based distress is present.
 
 ### 5. Gap
 
-There is no shortage of theory about extremes, and there is no shortage of econometric tools for volatility and stress measurement. The gap is the lack of a reproducible bridge that makes recurrence, clustering, and return-time diagnostics operational in the same workflow as conventional econometric summaries.
+There is no shortage of theory about dependent extremes, and there is no shortage of econometric tools for volatility and systemic risk. The gap is narrower and more practical than that. What is missing is a reproducible framework in which recurrence, clustering, and return-time structure are treated as explicit stress objects and analyzed alongside conventional econometric summaries rather than outside them.
 
 ## Formal framework
 
@@ -117,9 +112,7 @@ $$
 
 Interpretation:
 
-- $\widehat{p}_n$ measures how often the process enters the stress region;
-- dividing by $\widehat{\theta}_n^{(r)}$ raises the stress load when exceedances are more clustered;
-- under independence, the adjustment disappears.
+The exceedance rate measures how often the process enters the stress region, whereas the clustering coefficient measures how isolated those exceedances are once they occur. Dividing the first object by the second therefore leaves the benchmark case of independence unchanged and raises the stress load precisely when extreme events arrive in tighter temporal groups. The purpose of the functional is not to replace richer theories of tail dependence, but to convert clustering information into a scalar summary that can be compared alongside incidence and volatility measures.
 
 ### Proposition set
 
@@ -175,12 +168,23 @@ This gives the main numerical warning: when clustering is strong and $\theta$ is
 
 ### Interpretation
 
-The synthetic evidence supports a narrow but meaningful claim:
+The synthetic evidence supports a narrow but meaningful claim. Recurrence diagnostics separate benchmark processes that volatility alone would describe too coarsely, return-time distributions reveal dispersion that no event count can summarize adequately, multivariate stress activation identifies when stress is joint rather than isolated, and volatility remains necessary without being sufficient. The point is not that recurrence replaces standard econometric diagnostics, but that it measures a dimension of stress that those diagnostics do not directly encode.
 
-- recurrence diagnostics separate benchmark processes that volatility alone would describe too coarsely;
-- return-time distributions reveal dispersion that an event count cannot summarize;
-- multivariate stress activation identifies when stress is joint rather than isolated;
-- volatility remains useful, but it is not a substitute for recurrence structure.
+## Threshold robustness and uncertainty
+
+Threshold-based recurrence diagnostics carry two uncertainties at once: ordinary sampling uncertainty and design uncertainty induced by the threshold and run-length choices. That is why threshold robustness cannot be treated as a stylistic appendix item.
+
+The existing threshold-sensitivity artifact already shows the issue clearly. For the benchmark observable used in the scan, the runs-based clustering estimate is `0.888` at the `0.90` quantile with `500` exceedances, `0.909` at the `0.93` quantile with `350` exceedances, and `1.000` from the `0.95` quantile onward as the exceedance count falls from `250` to `50`. The estimate therefore appears more stable at higher thresholds precisely when the effective sample is shrinking most aggressively.
+
+That pattern gives the uncertainty section its main point. A single clustering estimate is not enough. A serious applied version of the paper should report block-bootstrap or subsampling uncertainty measures over a threshold grid, so that finite-sample noise and threshold sensitivity are evaluated together rather than one at a time.
+
+## Minimal real-data illustration
+
+The repo currently contains only a short didactic real-data example, not a full empirical application, but it is still enough to show how the recurrence language works outside synthetic benchmarks.
+
+Using the example inflation series with an upper-tail threshold at the `0.80` quantile yields `5` exceedances, all belonging to a single run from August 2021 through December 2021. Using the example equity series after converting levels into upper-tail equity losses through sign-flipped monthly log returns yields `5` exceedances spread across `5` distinct clusters between March 2020 and September 2021. Under the same coarse rule, the two series overlap in only one joint stress month: September 2021.
+
+The point of this section is not empirical generalization. It is to show that the framework can already distinguish between persistent and intermittent stress in a real-data toy setting, and that this distinction is more informative than simply saying that both series experienced stress at some point.
 
 ## Paper structure
 
@@ -195,20 +199,13 @@ The synthetic evidence supports a narrow but meaningful claim:
 
 ## Limits of the paper
 
-The paper does **not**:
+The limits of the paper are part of its proper definition rather than an afterthought. On the theory side, the manuscript does not derive a new asymptotic theory for extremal-index estimation, solve the threshold-selection problem, or provide a general finite-sample theory for recurrence diagnostics. Its theoretical contribution is narrower: it introduces a cluster-adjusted stress functional and establishes a small set of interpretable properties around it.
 
-- derive new asymptotic theory for extremal-index estimation;
-- provide threshold-optimality theory;
-- deliver a structural macro-financial model;
-- identify contagion or causal propagation;
-- justify strong empirical claims about real economies from synthetic evidence alone.
+On the empirical side, the paper relies primarily on synthetic evidence. That is enough to show what the diagnostics measure, but not enough to justify broad claims about real economies or financial systems. A stronger empirical paper would need uncertainty quantification, threshold and run-length robustness, and a defended real-data application.
 
-The paper **does**:
+The multivariate component is narrower still. It identifies when stress is isolated and when it is joint, but it does not identify contagion, propagation, or structural transmission.
 
-- formalize recurrence diagnostics for econometric stress analysis;
-- integrate those diagnostics with baseline volatility summaries;
-- provide a reproducible artifact pipeline;
-- add a narrow original theoretical object with interpretable properties.
+Within those limits, the paper does something specific and defensible: it formalizes recurrence diagnostics for econometric stress analysis, integrates them with baseline volatility summaries, provides a reproducible artifact pipeline, and adds a narrow theoretical object with interpretable properties.
 
 ## What would strengthen the paper further
 
