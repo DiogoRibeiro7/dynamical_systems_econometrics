@@ -171,19 +171,114 @@ def plot_extremal_index_by_threshold(
     quantiles: list[float],
     theta_values: list[float],
     output_path: str | Path,
+    lower_bounds: list[float] | None = None,
+    upper_bounds: list[float] | None = None,
 ) -> None:
     """Plot extremal-index estimates against threshold quantiles."""
     if len(quantiles) == 0 or len(quantiles) != len(theta_values):
         raise ValueError("quantiles and theta_values must be non-empty and have the same length.")
     if any((q <= 0.0) or (q >= 1.0) for q in quantiles):
         raise ValueError("quantiles must lie in the open interval (0, 1).")
+    if (lower_bounds is None) ^ (upper_bounds is None):
+        raise ValueError("lower_bounds and upper_bounds must both be provided or both be omitted.")
+    if lower_bounds is not None and (len(lower_bounds) != len(quantiles) or len(upper_bounds) != len(quantiles)):
+        raise ValueError("lower_bounds and upper_bounds must match the length of quantiles.")
 
     path = _ensure_parent_dir(output_path)
     fig, ax = plt.subplots(figsize=(8, 4))
+    if lower_bounds is not None and upper_bounds is not None:
+        ax.fill_between(
+            quantiles,
+            lower_bounds,
+            upper_bounds,
+            color="#9ecae9",
+            alpha=0.35,
+            label="90% block-bootstrap interval",
+        )
     ax.plot(quantiles, theta_values, marker="o", color="#72b7b2")
     ax.set_title("Extremal index by threshold")
     ax.set_xlabel("threshold quantile")
     ax.set_ylabel("theta")
+    if lower_bounds is not None and upper_bounds is not None:
+        ax.legend(frameon=False, loc="lower right")
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
+def plot_cluster_adjusted_stress_by_threshold(
+    quantiles: list[float],
+    lambda_values: list[float],
+    output_path: str | Path,
+    lower_bounds: list[float] | None = None,
+    upper_bounds: list[float] | None = None,
+) -> None:
+    """Plot cluster-adjusted stress estimates against threshold quantiles."""
+    if len(quantiles) == 0 or len(quantiles) != len(lambda_values):
+        raise ValueError("quantiles and lambda_values must be non-empty and have the same length.")
+    if any((q <= 0.0) or (q >= 1.0) for q in quantiles):
+        raise ValueError("quantiles must lie in the open interval (0, 1).")
+    if (lower_bounds is None) ^ (upper_bounds is None):
+        raise ValueError("lower_bounds and upper_bounds must both be provided or both be omitted.")
+    if lower_bounds is not None and (len(lower_bounds) != len(quantiles) or len(upper_bounds) != len(quantiles)):
+        raise ValueError("lower_bounds and upper_bounds must match the length of quantiles.")
+
+    path = _ensure_parent_dir(output_path)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    if lower_bounds is not None and upper_bounds is not None:
+        ax.fill_between(
+            quantiles,
+            lower_bounds,
+            upper_bounds,
+            color="#fdd0a2",
+            alpha=0.35,
+            label="90% block-bootstrap interval",
+        )
+    ax.plot(quantiles, lambda_values, marker="o", color="#c45b12")
+    ax.set_title("Cluster-adjusted stress by threshold")
+    ax.set_xlabel("threshold quantile")
+    ax.set_ylabel("lambda")
+    if lower_bounds is not None and upper_bounds is not None:
+        ax.legend(frameon=False, loc="upper right")
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
+def plot_cluster_adjusted_stress_by_run_length(
+    run_lengths: list[int],
+    lambda_values: list[float],
+    output_path: str | Path,
+    lower_bounds: list[float] | None = None,
+    upper_bounds: list[float] | None = None,
+) -> None:
+    """Plot cluster-adjusted stress estimates against run length."""
+    if len(run_lengths) == 0 or len(run_lengths) != len(lambda_values):
+        raise ValueError("run_lengths and lambda_values must be non-empty and have the same length.")
+    if any(r < 1 for r in run_lengths):
+        raise ValueError("run_lengths must be positive integers.")
+    if (lower_bounds is None) ^ (upper_bounds is None):
+        raise ValueError("lower_bounds and upper_bounds must both be provided or both be omitted.")
+    if lower_bounds is not None and (len(lower_bounds) != len(run_lengths) or len(upper_bounds) != len(run_lengths)):
+        raise ValueError("lower_bounds and upper_bounds must match the length of run_lengths.")
+
+    path = _ensure_parent_dir(output_path)
+    fig, ax = plt.subplots(figsize=(8, 4))
+    if lower_bounds is not None and upper_bounds is not None:
+        ax.fill_between(
+            run_lengths,
+            lower_bounds,
+            upper_bounds,
+            color="#fdd0a2",
+            alpha=0.35,
+            label="90% block-bootstrap interval",
+        )
+    ax.plot(run_lengths, lambda_values, marker="o", color="#8c2d04")
+    ax.set_title("Cluster-adjusted stress by run length")
+    ax.set_xlabel("run length")
+    ax.set_ylabel("lambda")
+    if lower_bounds is not None and upper_bounds is not None:
+        ax.legend(frameon=False, loc="upper left")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
     plt.close(fig)
@@ -349,6 +444,43 @@ def plot_baseline_comparison(
     ax.set_xlabel(str(x_col))
     ax.set_ylabel(str(baseline_col))
     return fig, ax
+
+
+def plot_empirical_stress_illustration(
+    inflation_series: pd.Series,
+    inflation_threshold: float,
+    equity_loss_series: pd.Series,
+    equity_loss_threshold: float,
+    output_path: str | Path,
+) -> None:
+    """Plot a small empirical illustration with inflation and equity-loss stress."""
+    inflation = _validate_numeric_series(inflation_series, "inflation_series")
+    equity_loss = _validate_numeric_series(equity_loss_series, "equity_loss_series")
+    if not isinstance(inflation.index, pd.DatetimeIndex) or not isinstance(equity_loss.index, pd.DatetimeIndex):
+        raise TypeError("Both empirical illustration series must use DatetimeIndex.")
+
+    path = _ensure_parent_dir(output_path)
+    fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=False)
+
+    inflation_exceed = inflation >= inflation_threshold
+    axes[0].plot(inflation.index, inflation.to_numpy(), color="#c45b12", linewidth=1.2)
+    axes[0].scatter(inflation.index[inflation_exceed], inflation[inflation_exceed], color="#e45756", s=22)
+    axes[0].axhline(inflation_threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
+    axes[0].set_title("Inflation stress episode")
+    axes[0].set_xlabel("date")
+    axes[0].set_ylabel("inflation")
+
+    equity_exceed = equity_loss >= equity_loss_threshold
+    axes[1].plot(equity_loss.index, equity_loss.to_numpy(), color="#4c78a8", linewidth=1.2)
+    axes[1].scatter(equity_loss.index[equity_exceed], equity_loss[equity_exceed], color="#e45756", s=22)
+    axes[1].axhline(equity_loss_threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
+    axes[1].set_title("Equity-loss stress episodes")
+    axes[1].set_xlabel("date")
+    axes[1].set_ylabel("loss")
+
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
 
 
 def plot_conceptual_pipeline(

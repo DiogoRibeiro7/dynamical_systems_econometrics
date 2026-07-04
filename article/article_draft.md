@@ -172,11 +172,13 @@ The synthetic evidence supports a narrow but meaningful claim. Recurrence diagno
 
 ## Threshold robustness and uncertainty
 
-Threshold-based recurrence diagnostics carry two uncertainties at once: ordinary sampling uncertainty and design uncertainty induced by the threshold and run-length choices. That is why threshold robustness cannot be treated as a stylistic appendix item.
+Threshold-based recurrence diagnostics carry two uncertainties at once: ordinary sampling uncertainty and design uncertainty induced by the threshold and run-length choices. That is why threshold robustness cannot be treated as a stylistic appendix item. The code now reflects that point directly by pairing the threshold scan with a moving-block bootstrap interval rather than leaving the figure as a point-estimate line.
 
 The existing threshold-sensitivity artifact already shows the issue clearly. For the benchmark observable used in the scan, the runs-based clustering estimate is `0.888` at the `0.90` quantile with `500` exceedances, `0.909` at the `0.93` quantile with `350` exceedances, and `1.000` from the `0.95` quantile onward as the exceedance count falls from `250` to `50`. The estimate therefore appears more stable at higher thresholds precisely when the effective sample is shrinking most aggressively.
 
-That pattern gives the uncertainty section its main point. A single clustering estimate is not enough. A serious applied version of the paper should report block-bootstrap or subsampling uncertainty measures over a threshold grid, so that finite-sample noise and threshold sensitivity are evaluated together rather than one at a time.
+That pattern gives the uncertainty section its main point. A single clustering estimate is not enough. The updated artifacts are a first implementation step because they show both the threshold path for `theta` and the threshold path for the cluster-adjusted stress functional together with block-bootstrap uncertainty. A more complete applied version would still report run-length sensitivity alongside these intervals, but the core uncertainty treatment is now implemented for the functional itself rather than only for the clustering coefficient.
+
+Run-length sensitivity is the next layer of robustness because the declustering rule is itself part of the model of persistence. In the current run-length scan at threshold quantile `0.90`, the cluster-adjusted functional is `0.100` for run lengths `1` and `2`, then rises to `0.113`, `0.149`, and `0.206` for run lengths `4`, `6`, and `8`. The substantive point is that a longer quiet-period requirement mechanically increases the measured stress load by merging more exceedances into common episodes. That is not a flaw in the diagnostic; it is the reason the run-length choice must be reported explicitly.
 
 ## Minimal real-data illustration
 
@@ -184,7 +186,7 @@ The repo currently contains only a short didactic real-data example, not a full 
 
 Using the example inflation series with an upper-tail threshold at the `0.80` quantile yields `5` exceedances, all belonging to a single run from August 2021 through December 2021. Using the example equity series after converting levels into upper-tail equity losses through sign-flipped monthly log returns yields `5` exceedances spread across `5` distinct clusters between March 2020 and September 2021. Under the same coarse rule, the two series overlap in only one joint stress month: September 2021.
 
-The point of this section is not empirical generalization. It is to show that the framework can already distinguish between persistent and intermittent stress in a real-data toy setting, and that this distinction is more informative than simply saying that both series experienced stress at some point.
+The point of this section is not empirical generalization. It is to show that the framework can already distinguish between persistent and intermittent stress in a real-data toy setting, and that this distinction is more informative than simply saying that both series experienced stress at some point. The code now generates a dedicated empirical illustration artifact so that the paper is not relying on prose alone for that comparison.
 
 ## Paper structure
 

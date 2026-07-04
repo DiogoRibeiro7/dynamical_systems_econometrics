@@ -10,12 +10,21 @@ import pandas as pd
 from dynsys_econometrics.data import load_time_series_csv
 from dynsys_econometrics.baselines import rolling_volatility
 from dynsys_econometrics.econometrics import compare_event_diagnostics
-from dynsys_econometrics.extremes import estimate_runs_extremal_index, threshold_sensitivity_analysis
+from dynsys_econometrics.extremes import (
+    bootstrap_threshold_sensitivity_analysis,
+    bootstrap_run_length_sensitivity_analysis,
+    estimate_runs_extremal_index,
+    run_length_sensitivity_analysis,
+    threshold_sensitivity_analysis,
+)
 from dynsys_econometrics.multivariate import stress_state_index
 from dynsys_econometrics.plots import (
     plot_baseline_comparison,
+    plot_cluster_adjusted_stress_by_run_length,
+    plot_cluster_adjusted_stress_by_threshold,
     plot_clustered_vs_isolated_extremes,
     plot_conceptual_pipeline,
+    plot_empirical_stress_illustration,
     plot_extremal_index_bars,
     plot_extremal_index_by_threshold,
     plot_joint_stress_timeline,
@@ -73,6 +82,20 @@ def _build_stress_heatmap_frame() -> pd.DataFrame:
     standardized = (frame - frame.mean()) / frame.std(ddof=0)
     rolling = standardized.abs().rolling(window=20, min_periods=1).mean()
     return rolling.iloc[::5].reset_index(drop=True)
+
+
+def _build_empirical_illustration(repo_root: Path) -> tuple[pd.Series, pd.Series]:
+    """Load example inflation and equity-loss series for the empirical illustration."""
+    inflation_path = repo_root / "data" / "raw" / "example_inflation.csv"
+    equity_path = repo_root / "data" / "raw" / "example_equity_index.csv"
+    inflation = pd.read_csv(inflation_path, parse_dates=["date"]).set_index("date")["value"].astype(float)
+    inflation.name = "inflation"
+
+    equity = pd.read_csv(equity_path, parse_dates=["date"]).set_index("date")["value"].astype(float)
+    equity_returns = np.log(equity).diff().dropna()
+    equity_loss = (-equity_returns).astype(float)
+    equity_loss.name = "equity_loss"
+    return inflation.sort_index(), equity_loss.sort_index()
 
 
 def main() -> None:
@@ -196,20 +219,76 @@ def main() -> None:
         threshold_quantiles=[0.90, 0.93, 0.95, 0.97, 0.99],
         run_length=4,
     )
+    bootstrap_sensitivity = bootstrap_threshold_sensitivity_analysis(
+        observable,
+        threshold_quantiles=[0.90, 0.93, 0.95, 0.97, 0.99],
+        run_length=4,
+        n_bootstrap=250,
+        block_size=40,
+        seed=29,
+        ci_level=0.90,
+    )
     pd.DataFrame(
         {
-            "quantile": [row.quantile for row in sensitivity],
-            "threshold": [row.threshold for row in sensitivity],
-            "n_exceedances": [row.n_exceedances for row in sensitivity],
-            "n_clusters": [row.n_clusters for row in sensitivity],
-            "theta_runs": [row.theta_runs for row in sensitivity],
-            "theta_cluster_mean": [row.theta_cluster_mean for row in sensitivity],
+            "quantile": [row.quantile for row in bootstrap_sensitivity],
+            "threshold": [row.threshold for row in bootstrap_sensitivity],
+            "n_exceedances": [row.n_exceedances for row in bootstrap_sensitivity],
+            "n_clusters": [row.n_clusters for row in bootstrap_sensitivity],
+            "theta_runs": [row.theta_runs for row in bootstrap_sensitivity],
+            "theta_cluster_mean": [row.theta_cluster_mean for row in bootstrap_sensitivity],
+            "lambda_runs": [row.lambda_runs for row in bootstrap_sensitivity],
+            "theta_runs_ci_lower": [row.theta_runs_ci_lower for row in bootstrap_sensitivity],
+            "theta_runs_ci_upper": [row.theta_runs_ci_upper for row in bootstrap_sensitivity],
+            "lambda_runs_ci_lower": [row.lambda_runs_ci_lower for row in bootstrap_sensitivity],
+            "lambda_runs_ci_upper": [row.lambda_runs_ci_upper for row in bootstrap_sensitivity],
+            "n_bootstrap": [row.n_bootstrap for row in bootstrap_sensitivity],
+            "block_size": [row.block_size for row in bootstrap_sensitivity],
         }
     ).to_csv(output_dir / "extremal_index_by_threshold_source.csv", index=False)
     plot_extremal_index_by_threshold(
-        quantiles=[row.quantile for row in sensitivity],
-        theta_values=[row.theta_runs for row in sensitivity],
+        quantiles=[row.quantile for row in bootstrap_sensitivity],
+        theta_values=[row.theta_runs for row in bootstrap_sensitivity],
+        lower_bounds=[row.theta_runs_ci_lower for row in bootstrap_sensitivity],
+        upper_bounds=[row.theta_runs_ci_upper for row in bootstrap_sensitivity],
         output_path=output_dir / "extremal_index_by_threshold.png",
+    )
+    plot_cluster_adjusted_stress_by_threshold(
+        quantiles=[row.quantile for row in bootstrap_sensitivity],
+        lambda_values=[row.lambda_runs for row in bootstrap_sensitivity],
+        lower_bounds=[row.lambda_runs_ci_lower for row in bootstrap_sensitivity],
+        upper_bounds=[row.lambda_runs_ci_upper for row in bootstrap_sensitivity],
+        output_path=output_dir / "cluster_adjusted_stress_by_threshold.png",
+    )
+    run_length_sensitivity = bootstrap_run_length_sensitivity_analysis(
+        observable,
+        threshold_quantile=0.90,
+        run_lengths=[1, 2, 4, 6, 8],
+        n_bootstrap=250,
+        block_size=40,
+        seed=31,
+        ci_level=0.90,
+    )
+    pd.DataFrame(
+        {
+            "run_length": [row.run_length for row in run_length_sensitivity],
+            "threshold_quantile": [row.threshold_quantile for row in run_length_sensitivity],
+            "threshold": [row.threshold for row in run_length_sensitivity],
+            "n_exceedances": [row.n_exceedances for row in run_length_sensitivity],
+            "n_clusters": [row.n_clusters for row in run_length_sensitivity],
+            "theta_runs": [row.theta_runs for row in run_length_sensitivity],
+            "lambda_runs": [row.lambda_runs for row in run_length_sensitivity],
+            "lambda_runs_ci_lower": [row.lambda_runs_ci_lower for row in run_length_sensitivity],
+            "lambda_runs_ci_upper": [row.lambda_runs_ci_upper for row in run_length_sensitivity],
+            "n_bootstrap": [row.n_bootstrap for row in run_length_sensitivity],
+            "block_size": [row.block_size for row in run_length_sensitivity],
+        }
+    ).to_csv(output_dir / "cluster_adjusted_stress_by_run_length_source.csv", index=False)
+    plot_cluster_adjusted_stress_by_run_length(
+        run_lengths=[row.run_length for row in run_length_sensitivity],
+        lambda_values=[row.lambda_runs for row in run_length_sensitivity],
+        lower_bounds=[row.lambda_runs_ci_lower for row in run_length_sensitivity],
+        upper_bounds=[row.lambda_runs_ci_upper for row in run_length_sensitivity],
+        output_path=output_dir / "cluster_adjusted_stress_by_run_length.png",
     )
     extremal_index_table = pd.DataFrame(
         {
@@ -287,6 +366,28 @@ def main() -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "06_econometric_vs_recurrence_diagnostics.png", dpi=160)
 
+    inflation_series, equity_loss_series = _build_empirical_illustration(repo_root)
+    inflation_threshold = float(inflation_series.quantile(0.80))
+    equity_loss_threshold = float(equity_loss_series.quantile(0.80))
+    empirical_frame = pd.DataFrame({"date": inflation_series.index, "inflation": inflation_series.to_numpy()})
+    empirical_frame["inflation_threshold"] = inflation_threshold
+    empirical_frame["inflation_exceedance"] = empirical_frame["inflation"] >= inflation_threshold
+    equity_frame = pd.DataFrame({"date": equity_loss_series.index, "equity_loss": equity_loss_series.to_numpy()})
+    equity_frame["equity_loss_threshold"] = equity_loss_threshold
+    equity_frame["equity_loss_exceedance"] = equity_frame["equity_loss"] >= equity_loss_threshold
+    empirical_merged = empirical_frame.merge(equity_frame, on="date", how="inner")
+    empirical_merged["joint_exceedance"] = (
+        empirical_merged["inflation_exceedance"] & empirical_merged["equity_loss_exceedance"]
+    )
+    empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
+    plot_empirical_stress_illustration(
+        inflation_series=inflation_series,
+        inflation_threshold=inflation_threshold,
+        equity_loss_series=equity_loss_series,
+        equity_loss_threshold=equity_loss_threshold,
+        output_path=output_dir / "07_real_data_stress_illustration.png",
+    )
+
     summary_paths = [
         output_dir / "01_conceptual_pipeline.png",
         output_dir / "02_synthetic_extremes_comparison.png",
@@ -294,11 +395,14 @@ def main() -> None:
         output_dir / "04_extremal_index_by_series.png",
         output_dir / "05_multivariate_stress_timeline.png",
         output_dir / "06_econometric_vs_recurrence_diagnostics.png",
+        output_dir / "07_real_data_stress_illustration.png",
         output_dir / "simulated_orbit_and_observable.png",
         output_dir / "threshold_exceedances.png",
         output_dir / "clustered_vs_isolated_extremes.png",
         output_dir / "return_time_distribution.png",
         output_dir / "extremal_index_by_threshold.png",
+        output_dir / "cluster_adjusted_stress_by_threshold.png",
+        output_dir / "cluster_adjusted_stress_by_run_length.png",
         output_dir / "macro_financial_crisis_timeline.png",
         output_dir / "multivariate_stress_heatmap.png",
     ]
