@@ -5,13 +5,23 @@ experiment:
 
 empirical:
   series:
-    - loader: local_csv
-      path: data/raw/example_equity_index.csv
-      series_id: example_equity_index
-      transformation: log_return
-    - loader: local_csv
-      path: data/raw/example_inflation.csv
-      series_id: example_inflation
+    - loader: fred_csv
+      path: data/processed/fred_unrate_clean.csv
+      series_id: unrate
+      date_col: observation_date
+      value_col: UNRATE
+      transformation: level
+    - loader: fred_csv
+      path: data/processed/fred_baa10ym_clean.csv
+      series_id: baa10ym
+      date_col: observation_date
+      value_col: BAA10YM
+      transformation: level
+    - loader: fred_csv
+      path: data/processed/fred_kcfsi_clean.csv
+      series_id: kcfsi
+      date_col: observation_date
+      value_col: KCFSI
       transformation: level
 
 analysis:

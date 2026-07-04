@@ -447,38 +447,57 @@ def plot_baseline_comparison(
 
 
 def plot_empirical_stress_illustration(
-    inflation_series: pd.Series,
-    inflation_threshold: float,
-    equity_loss_series: pd.Series,
-    equity_loss_threshold: float,
+    panel: pd.DataFrame,
     output_path: str | Path,
 ) -> None:
-    """Plot a small empirical illustration with inflation and equity-loss stress."""
-    inflation = _validate_numeric_series(inflation_series, "inflation_series")
-    equity_loss = _validate_numeric_series(equity_loss_series, "equity_loss_series")
-    if not isinstance(inflation.index, pd.DatetimeIndex) or not isinstance(equity_loss.index, pd.DatetimeIndex):
-        raise TypeError("Both empirical illustration series must use DatetimeIndex.")
+    """Plot a macro-financial empirical stress panel with a joint-stress timeline."""
+    required = {
+        "date",
+        "unrate",
+        "baa10ym",
+        "kcfsi",
+        "unrate_threshold",
+        "baa10ym_threshold",
+        "kcfsi_threshold",
+        "unrate_exceedance",
+        "baa10ym_exceedance",
+        "kcfsi_exceedance",
+        "stress_score",
+        "joint_exceedance",
+    }
+    missing = required.difference(panel.columns)
+    if missing:
+        raise ValueError(f"Missing required columns: {sorted(missing)}")
 
     path = _ensure_parent_dir(output_path)
-    fig, axes = plt.subplots(2, 1, figsize=(10, 7), sharex=False)
+    frame = panel.copy()
+    frame["date"] = pd.to_datetime(frame["date"], errors="raise")
 
-    inflation_exceed = inflation >= inflation_threshold
-    axes[0].plot(inflation.index, inflation.to_numpy(), color="#c45b12", linewidth=1.2)
-    axes[0].scatter(inflation.index[inflation_exceed], inflation[inflation_exceed], color="#e45756", s=22)
-    axes[0].axhline(inflation_threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
-    axes[0].set_title("Inflation stress episode")
-    axes[0].set_xlabel("date")
-    axes[0].set_ylabel("inflation")
+    fig, axes = plt.subplots(4, 1, figsize=(11, 10), sharex=True)
+    series_specs = [
+        ("unrate", "unrate_threshold", "unrate_exceedance", "Unemployment rate", "#c45b12"),
+        ("baa10ym", "baa10ym_threshold", "baa10ym_exceedance", "Baa-Treasury spread", "#4c78a8"),
+        ("kcfsi", "kcfsi_threshold", "kcfsi_exceedance", "KCFSI", "#54a24b"),
+    ]
+    for ax, (value_col, threshold_col, exceedance_col, title, color) in zip(axes[:3], series_specs, strict=True):
+        values = pd.to_numeric(frame[value_col], errors="raise")
+        threshold = float(pd.to_numeric(frame[threshold_col], errors="raise").iloc[0])
+        exceedance = frame[exceedance_col].astype(bool)
+        ax.plot(frame["date"], values, color=color, linewidth=1.1)
+        ax.scatter(frame.loc[exceedance, "date"], values[exceedance], color="#e45756", s=14)
+        ax.axhline(threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
+        ax.set_title(title)
+        ax.set_ylabel(value_col)
 
-    equity_exceed = equity_loss >= equity_loss_threshold
-    axes[1].plot(equity_loss.index, equity_loss.to_numpy(), color="#4c78a8", linewidth=1.2)
-    axes[1].scatter(equity_loss.index[equity_exceed], equity_loss[equity_exceed], color="#e45756", s=22)
-    axes[1].axhline(equity_loss_threshold, linestyle="--", linewidth=1.0, color="#72b7b2")
-    axes[1].set_title("Equity-loss stress episodes")
-    axes[1].set_xlabel("date")
-    axes[1].set_ylabel("loss")
+    joint = frame["joint_exceedance"].astype(bool)
+    stress_score = pd.to_numeric(frame["stress_score"], errors="raise")
+    axes[3].plot(frame["date"], stress_score, color="#14213d", linewidth=1.2)
+    axes[3].scatter(frame.loc[joint, "date"], stress_score[joint], color="#e45756", s=16)
+    axes[3].set_title("Joint stress score")
+    axes[3].set_ylabel("score")
+    axes[3].set_xlabel("date")
 
-    fig.tight_layout()
+    fig.tight_layout(h_pad=1.0)
     fig.savefig(path, dpi=160)
     plt.close(fig)
 

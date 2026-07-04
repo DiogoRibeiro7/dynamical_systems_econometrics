@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
-from dynsys_econometrics.data import load_time_series_csv
+from dynsys_econometrics.data import load_fred_csv, load_time_series_csv
 from dynsys_econometrics.baselines import rolling_volatility
 from dynsys_econometrics.econometrics import compare_event_diagnostics
 from dynsys_econometrics.extremes import (
@@ -84,18 +84,67 @@ def _build_stress_heatmap_frame() -> pd.DataFrame:
     return rolling.iloc[::5].reset_index(drop=True)
 
 
-def _build_empirical_illustration(repo_root: Path) -> tuple[pd.Series, pd.Series]:
-    """Load example inflation and equity-loss series for the empirical illustration."""
-    inflation_path = repo_root / "data" / "raw" / "example_inflation.csv"
-    equity_path = repo_root / "data" / "raw" / "example_equity_index.csv"
-    inflation = pd.read_csv(inflation_path, parse_dates=["date"]).set_index("date")["value"].astype(float)
-    inflation.name = "inflation"
+def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Build a small empirical macro-financial panel from cleaned FRED CSV files."""
+    series_specs = [
+        ("unrate", repo_root / "data" / "processed" / "fred_unrate_clean.csv", "UNRATE"),
+        ("baa10ym", repo_root / "data" / "processed" / "fred_baa10ym_clean.csv", "BAA10YM"),
+        ("kcfsi", repo_root / "data" / "processed" / "fred_kcfsi_clean.csv", "KCFSI"),
+    ]
 
-    equity = pd.read_csv(equity_path, parse_dates=["date"]).set_index("date")["value"].astype(float)
-    equity_returns = np.log(equity).diff().dropna()
-    equity_loss = (-equity_returns).astype(float)
-    equity_loss.name = "equity_loss"
-    return inflation.sort_index(), equity_loss.sort_index()
+    series_map: dict[str, pd.Series] = {}
+    for series_id, path, value_col in series_specs:
+        frame = load_fred_csv(
+            path,
+            series_id=series_id,
+            date_col="observation_date",
+            value_col=value_col,
+        )
+        series = frame.set_index("date")["value"].sort_index().astype(float)
+        series.name = series_id
+        series_map[series_id] = series
+
+    common = pd.concat(series_map.values(), axis=1, join="inner").dropna().sort_index()
+    panel = pd.DataFrame({"date": common.index})
+    exceedance_matrix = pd.DataFrame(index=common.index)
+    summary_rows: list[dict[str, float | int | str]] = []
+
+    for series_id in common.columns:
+        values = common[series_id]
+        result = estimate_runs_extremal_index(
+            values.to_numpy(),
+            threshold_quantile=0.90,
+            run_length=3,
+        )
+        exceedance = values > result.threshold
+        panel[series_id] = values.to_numpy()
+        panel[f"{series_id}_threshold"] = result.threshold
+        panel[f"{series_id}_exceedance"] = exceedance.to_numpy()
+        exceedance_matrix[series_id] = exceedance.to_numpy()
+        summary_rows.append(
+            {
+                "series_id": series_id,
+                "sample_start": str(common.index.min().date()),
+                "sample_end": str(common.index.max().date()),
+                "n_observations": int(len(values)),
+                "threshold_quantile": 0.90,
+                "run_length": 3,
+                "threshold": float(result.threshold),
+                "n_exceedances": int(result.n_exceedances),
+                "n_clusters": int(result.n_clusters),
+                "theta_runs": float(result.theta_hat),
+                "lambda_runs": float((result.n_exceedances / len(values)) / result.theta_hat),
+            }
+        )
+
+    exceedance_frame = exceedance_matrix.copy()
+    exceedance_frame.insert(0, "date", common.index)
+    stress_timeline = stress_state_index(exceedance_frame)
+    stress_timeline["date"] = pd.to_datetime(stress_timeline["date"], errors="raise")
+    stress_timeline["joint_exceedance"] = stress_timeline["n_active"] >= 2
+    panel = panel.merge(stress_timeline, on="date", how="left")
+
+    return panel, pd.DataFrame(summary_rows)
 
 
 def main() -> None:
@@ -366,25 +415,11 @@ def main() -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "06_econometric_vs_recurrence_diagnostics.png", dpi=160)
 
-    inflation_series, equity_loss_series = _build_empirical_illustration(repo_root)
-    inflation_threshold = float(inflation_series.quantile(0.80))
-    equity_loss_threshold = float(equity_loss_series.quantile(0.80))
-    empirical_frame = pd.DataFrame({"date": inflation_series.index, "inflation": inflation_series.to_numpy()})
-    empirical_frame["inflation_threshold"] = inflation_threshold
-    empirical_frame["inflation_exceedance"] = empirical_frame["inflation"] >= inflation_threshold
-    equity_frame = pd.DataFrame({"date": equity_loss_series.index, "equity_loss": equity_loss_series.to_numpy()})
-    equity_frame["equity_loss_threshold"] = equity_loss_threshold
-    equity_frame["equity_loss_exceedance"] = equity_frame["equity_loss"] >= equity_loss_threshold
-    empirical_merged = empirical_frame.merge(equity_frame, on="date", how="inner")
-    empirical_merged["joint_exceedance"] = (
-        empirical_merged["inflation_exceedance"] & empirical_merged["equity_loss_exceedance"]
-    )
+    empirical_merged, empirical_summary = _build_empirical_illustration(repo_root)
     empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
+    empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
     plot_empirical_stress_illustration(
-        inflation_series=inflation_series,
-        inflation_threshold=inflation_threshold,
-        equity_loss_series=equity_loss_series,
-        equity_loss_threshold=equity_loss_threshold,
+        panel=empirical_merged,
         output_path=output_dir / "07_real_data_stress_illustration.png",
     )
 
