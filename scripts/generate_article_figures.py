@@ -6,6 +6,7 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy.stats import kstest
 
 from dynsys_econometrics.data import load_fred_csv, load_time_series_csv
 from dynsys_econometrics.baselines import rolling_volatility
@@ -32,6 +33,7 @@ from dynsys_econometrics.plots import (
     plot_macro_financial_timeline,
     plot_multivariate_stress_heatmap,
     plot_orbit_and_observable,
+    plot_return_time_exponential_comparison,
     plot_return_time_distribution,
     plot_threshold_exceedances,
 )
@@ -85,7 +87,102 @@ def _build_stress_heatmap_frame() -> pd.DataFrame:
     return rolling.iloc[::5].reset_index(drop=True)
 
 
-def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def _moving_block_bootstrap_indices(
+    n_obs: int,
+    block_size: int,
+    rng: np.random.Generator,
+) -> np.ndarray:
+    """Draw moving-block bootstrap indices for a one-dimensional series."""
+    if n_obs <= 0:
+        raise ValueError("n_obs must be positive.")
+    if block_size <= 0:
+        raise ValueError("block_size must be positive.")
+    effective_block = min(block_size, n_obs)
+    n_blocks = int(np.ceil(n_obs / effective_block))
+    starts = rng.integers(0, n_obs - effective_block + 1, size=n_blocks)
+    return np.concatenate(
+        [np.arange(start, start + effective_block, dtype=int) for start in starts]
+    )[:n_obs]
+
+
+def _return_time_diagnostic(
+    values: np.ndarray,
+    threshold_quantile: float,
+    series_id: str,
+    block_size: int,
+    n_bootstrap: int,
+    seed: int,
+) -> tuple[pd.DataFrame, pd.DataFrame]:
+    """Compute normalized return-time diagnostics against the Exp(1) benchmark."""
+    sample = np.asarray(values, dtype=float)
+    threshold = float(np.quantile(sample, threshold_quantile))
+    exceedance_rate = float(np.mean(sample > threshold))
+    return_times = np.asarray(compute_return_times(sample, threshold=threshold), dtype=float)
+    normalized = exceedance_rate * return_times
+    if normalized.size == 0:
+        raise ValueError(f"No return times available for {series_id}.")
+
+    ordered = np.sort(normalized)
+    plotting_probability = (np.arange(ordered.size, dtype=float) + 0.5) / ordered.size
+    theoretical_quantile = -np.log1p(-plotting_probability)
+    ks_statistic = float(kstest(ordered, "expon").statistic)
+
+    rng = np.random.default_rng(seed)
+    bootstrap_statistics: list[float] = []
+    for _ in range(n_bootstrap):
+        bootstrap_sample = sample[_moving_block_bootstrap_indices(sample.size, block_size, rng)]
+        bootstrap_threshold = float(np.quantile(bootstrap_sample, threshold_quantile))
+        bootstrap_rate = float(np.mean(bootstrap_sample > bootstrap_threshold))
+        bootstrap_return_times = np.asarray(
+            compute_return_times(bootstrap_sample, threshold=bootstrap_threshold),
+            dtype=float,
+        )
+        if bootstrap_return_times.size == 0 or bootstrap_rate <= 0.0:
+            continue
+        bootstrap_normalized = bootstrap_rate * bootstrap_return_times
+        bootstrap_statistics.append(float(kstest(bootstrap_normalized, "expon").statistic))
+
+    bootstrap_pvalue = float(
+        (1 + np.sum(np.asarray(bootstrap_statistics) >= ks_statistic))
+        / (1 + len(bootstrap_statistics))
+    )
+    summary = pd.DataFrame(
+        [
+            {
+                "series_id": series_id,
+                "threshold_quantile": threshold_quantile,
+                "threshold": threshold,
+                "exceedance_rate": exceedance_rate,
+                "n_exceedances": int(np.sum(sample > threshold)),
+                "n_return_times": int(return_times.size),
+                "mean_return_time": float(np.mean(return_times)),
+                "median_return_time": float(np.median(return_times)),
+                "p90_return_time": float(np.quantile(return_times, 0.90)),
+                "max_return_time": int(np.max(return_times)),
+                "normalized_mean": float(np.mean(normalized)),
+                "normalized_cv": float(np.std(normalized, ddof=1) / np.mean(normalized)),
+                "ks_statistic": ks_statistic,
+                "bootstrap_pvalue": bootstrap_pvalue,
+                "bootstrap_replicates": len(bootstrap_statistics),
+                "block_size": block_size,
+                "quantile_method": "numpy.quantile default linear interpolation",
+            }
+        ]
+    )
+    qq_table = pd.DataFrame(
+        {
+            "series_id": series_id,
+            "plotting_probability": plotting_probability,
+            "theoretical_quantile": theoretical_quantile,
+            "empirical_quantile": ordered,
+        }
+    )
+    return summary, qq_table
+
+
+def _build_empirical_illustration(
+    repo_root: Path,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Build a small empirical macro-financial panel from cleaned FRED CSV files."""
     empirical_threshold_quantile = 0.90
     empirical_threshold_grid = [0.90, 0.93, 0.95, 0.97]
@@ -335,12 +432,41 @@ def main() -> None:
         return_times=return_times,
         output_path=output_dir / "return_time_distribution.png",
     )
-    pd.DataFrame({"return_time": return_times}).to_csv(
+    logistic_return_time_summary, logistic_return_time_qq = _return_time_diagnostic(
+        values=observable,
+        threshold_quantile=0.95,
+        series_id="logistic_observable",
+        block_size=40,
+        n_bootstrap=250,
+        seed=123,
+    )
+    clustered_return_time_summary, clustered_return_time_qq = _return_time_diagnostic(
+        values=np.abs(simulate_garch11(n_steps=3000, seed=11)),
+        threshold_quantile=0.95,
+        series_id="clustered_stress",
+        block_size=40,
+        n_bootstrap=250,
+        seed=123,
+    )
+    return_time_summary = pd.concat(
+        [logistic_return_time_summary, clustered_return_time_summary],
+        ignore_index=True,
+    )
+    return_time_qq = pd.concat(
+        [logistic_return_time_qq, clustered_return_time_qq],
+        ignore_index=True,
+    )
+    return_time_summary.to_csv(
+        output_dir / "03_return_time_distribution_summary.csv",
+        index=False,
+    )
+    return_time_qq.to_csv(
         output_dir / "03_return_time_distribution_source.csv",
         index=False,
     )
-    plot_return_time_distribution(
-        return_times=return_times,
+    plot_return_time_exponential_comparison(
+        qq_table=return_time_qq,
+        summary_table=return_time_summary,
         output_path=output_dir / "03_return_time_distribution.png",
     )
 

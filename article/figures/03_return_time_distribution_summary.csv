@@ -1,0 +1,3 @@
+series_id,threshold_quantile,threshold,exceedance_rate,n_exceedances,n_return_times,mean_return_time,median_return_time,p90_return_time,max_return_time,normalized_mean,normalized_cv,ks_statistic,bootstrap_pvalue,bootstrap_replicates,block_size,quantile_method
+logistic_observable,0.95,3.1958378584607527,0.05,250,249,20.072289156626507,14.0,40.20000000000002,90,1.0036144578313255,0.7945200248856832,0.22119921692859515,0.055776892430278883,250,40,numpy.quantile default linear interpolation
+clustered_stress,0.95,0.8818826265050873,0.05,150,149,19.322147651006713,10.0,53.60000000000005,145,0.9661073825503355,1.2861677693062097,0.1680625280378478,0.3386454183266932,250,40,numpy.quantile default linear interpolation

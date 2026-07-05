@@ -67,6 +67,8 @@ $$
 \mathbb{P}(X_{-1}\le u_n,\dots,X_{-r}\le u_n \mid X_0>u_n).
 $$
 
+For estimation, the threshold sequence should be intermediate rather than bounded-count: write $k_n = n\overline{F}(u_n)$ and assume $k_n \to \infty$ with $k_n/n \to 0$. This keeps exceedances rare but still numerous enough for consistency statements. The bounded-count regime $n\overline{F}(u_n)\to\tau\in(0,\infty)$ belongs to point-process limit theory, not to the plug-in estimation claim used here.
+
 For a multivariate process $\{X_{t,j}\}_{j=1}^d$, define the stress-state index:
 
 $$
@@ -105,7 +107,7 @@ Threshold choice and run-length choice are substantive. They cannot be hidden as
 Define:
 
 $$
-\Lambda(u_n,r)=\frac{p(u_n)}{\theta_n^{(r)}},
+\Lambda_n(u_n,r)=\frac{p(u_n)}{\theta_n^{(r)}},
 \qquad
 \widehat{\Lambda}_n(u_n,r)=\frac{\widehat{p}_n(u_n)}{\widehat{\theta}_n^{(r)}}.
 $$
@@ -123,8 +125,9 @@ The exceedance rate measures how often the process enters the stress region, whe
    - if exceedances are temporally independent, then $\theta^{(r)}(u)=(1-p(u))^r$ and $\Lambda_{\mathrm{indep}}(u,r)=p(u)/(1-p(u))^r$.
    - along a high-threshold sequence with $p(u_n)\to 0$, this benchmark converges to the simpler asymptotic reference because $\theta_n^{(r)}\to 1$.
 
-3. **Plug-in consistency**
-   - if the exceedance-rate and clustering estimators are consistent and the denominator stays away from zero, then the plug-in functional is consistent.
+3. **Relative plug-in consistency**
+   - under intermediate thresholds, if the exceedance-rate and finite-level clustering estimators are relatively consistent and the denominator stays away from zero, then $\widehat{\Lambda}_n/\Lambda_n \to_p 1$.
+   - this is a continuous-mapping corollary once the ingredient consistency results are imported from the literature rather than proved in the paper.
 
 4. **Run-length monotonicity**
    - if $r_2>r_1$, then $\theta_n^{(r_2)}\le \theta_n^{(r_1)}$ and therefore $\Lambda(u_n,r_2)\ge \Lambda(u_n,r_1)$.
@@ -151,12 +154,9 @@ This gives the main numerical warning: when clustering is strong and $\theta$ is
   - clustered synthetic stress: `0.673`
   - isolated synthetic stress: `0.780`
   - logistic benchmark observable: `1.000`
-- Return-time distribution:
-  - `249` return times
-  - mean `20.1`
-  - median `14.0`
-  - 90th percentile `40.2`
-  - maximum `90`
+- Return-time diagnostics against the exponential null:
+  - logistic benchmark observable: `249` return times, normalized CV `0.795`, KS distance `0.221`, block-bootstrap p-value `0.056`
+  - clustered synthetic stress: `149` return times, normalized CV `1.286`, KS distance `0.168`, block-bootstrap p-value `0.339`
 - Multivariate stress timeline:
   - `120` dated observations
   - `12` joint exceedance dates
@@ -169,7 +169,7 @@ This gives the main numerical warning: when clustering is strong and $\theta$ is
 
 ### Interpretation
 
-The synthetic evidence supports a narrow but meaningful claim. Recurrence diagnostics separate benchmark processes that volatility alone would describe too coarsely, return-time distributions reveal dispersion that no event count can summarize adequately, multivariate stress activation identifies when stress is joint rather than isolated, and volatility remains necessary without being sufficient. The point is not that recurrence replaces standard econometric diagnostics, but that it measures a dimension of stress that those diagnostics do not directly encode.
+The synthetic evidence supports a narrow but meaningful claim. Recurrence diagnostics separate benchmark processes that volatility alone would describe too coarsely, but the return-time object has to be read against a null rather than admired for having a wide spread. In the updated artifact set, the logistic benchmark observable at threshold quantile `0.95` yields `249` return times and a normalized coefficient of variation of `0.795`, which is broadly consistent with an exponential waiting-time benchmark once finite-sample uncertainty is acknowledged. The clustered synthetic stress benchmark, constructed from absolute GARCH(1,1) values at the same threshold quantile, yields `149` return times, a normalized coefficient of variation of `1.286`, a median waiting time of `10.0`, and a 90th percentile of `53.6`. The corresponding QQ comparison shows exactly the pattern the paper should emphasize: excess short waiting times together with a stretched upper tail. The point is not that recurrence replaces standard econometric diagnostics, but that it measures a dimension of stress organization that those diagnostics do not directly encode.
 
 ## Threshold robustness and uncertainty
 
