@@ -173,6 +173,7 @@ def plot_extremal_index_by_threshold(
     output_path: str | Path,
     lower_bounds: list[float] | None = None,
     upper_bounds: list[float] | None = None,
+    independence_baseline: list[float] | None = None,
 ) -> None:
     """Plot extremal-index estimates against threshold quantiles."""
     if len(quantiles) == 0 or len(quantiles) != len(theta_values):
@@ -183,6 +184,8 @@ def plot_extremal_index_by_threshold(
         raise ValueError("lower_bounds and upper_bounds must both be provided or both be omitted.")
     if lower_bounds is not None and (len(lower_bounds) != len(quantiles) or len(upper_bounds) != len(quantiles)):
         raise ValueError("lower_bounds and upper_bounds must match the length of quantiles.")
+    if independence_baseline is not None and len(independence_baseline) != len(quantiles):
+        raise ValueError("independence_baseline must match the length of quantiles.")
 
     path = _ensure_parent_dir(output_path)
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -196,10 +199,19 @@ def plot_extremal_index_by_threshold(
             label="90% block-bootstrap interval",
         )
     ax.plot(quantiles, theta_values, marker="o", color="#72b7b2")
+    if independence_baseline is not None:
+        ax.plot(
+            quantiles,
+            independence_baseline,
+            linestyle="--",
+            linewidth=1.2,
+            color="#1f1f1f",
+            label="i.i.d. finite-level baseline",
+        )
     ax.set_title("Extremal index by threshold")
     ax.set_xlabel("threshold quantile")
     ax.set_ylabel("theta")
-    if lower_bounds is not None and upper_bounds is not None:
+    if lower_bounds is not None and upper_bounds is not None or independence_baseline is not None:
         ax.legend(frameon=False, loc="lower right")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
@@ -212,6 +224,7 @@ def plot_cluster_adjusted_stress_by_threshold(
     output_path: str | Path,
     lower_bounds: list[float] | None = None,
     upper_bounds: list[float] | None = None,
+    independence_baseline: list[float] | None = None,
 ) -> None:
     """Plot cluster-adjusted stress estimates against threshold quantiles."""
     if len(quantiles) == 0 or len(quantiles) != len(lambda_values):
@@ -222,6 +235,8 @@ def plot_cluster_adjusted_stress_by_threshold(
         raise ValueError("lower_bounds and upper_bounds must both be provided or both be omitted.")
     if lower_bounds is not None and (len(lower_bounds) != len(quantiles) or len(upper_bounds) != len(quantiles)):
         raise ValueError("lower_bounds and upper_bounds must match the length of quantiles.")
+    if independence_baseline is not None and len(independence_baseline) != len(quantiles):
+        raise ValueError("independence_baseline must match the length of quantiles.")
 
     path = _ensure_parent_dir(output_path)
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -235,10 +250,19 @@ def plot_cluster_adjusted_stress_by_threshold(
             label="90% block-bootstrap interval",
         )
     ax.plot(quantiles, lambda_values, marker="o", color="#c45b12")
+    if independence_baseline is not None:
+        ax.plot(
+            quantiles,
+            independence_baseline,
+            linestyle="--",
+            linewidth=1.2,
+            color="#1f1f1f",
+            label="i.i.d. finite-level baseline",
+        )
     ax.set_title("Cluster-adjusted stress by threshold")
     ax.set_xlabel("threshold quantile")
     ax.set_ylabel("lambda")
-    if lower_bounds is not None and upper_bounds is not None:
+    if lower_bounds is not None and upper_bounds is not None or independence_baseline is not None:
         ax.legend(frameon=False, loc="upper right")
     fig.tight_layout()
     fig.savefig(path, dpi=160)
@@ -251,6 +275,7 @@ def plot_cluster_adjusted_stress_by_run_length(
     output_path: str | Path,
     lower_bounds: list[float] | None = None,
     upper_bounds: list[float] | None = None,
+    independence_baseline: list[float] | None = None,
 ) -> None:
     """Plot cluster-adjusted stress estimates against run length."""
     if len(run_lengths) == 0 or len(run_lengths) != len(lambda_values):
@@ -261,6 +286,8 @@ def plot_cluster_adjusted_stress_by_run_length(
         raise ValueError("lower_bounds and upper_bounds must both be provided or both be omitted.")
     if lower_bounds is not None and (len(lower_bounds) != len(run_lengths) or len(upper_bounds) != len(run_lengths)):
         raise ValueError("lower_bounds and upper_bounds must match the length of run_lengths.")
+    if independence_baseline is not None and len(independence_baseline) != len(run_lengths):
+        raise ValueError("independence_baseline must match the length of run_lengths.")
 
     path = _ensure_parent_dir(output_path)
     fig, ax = plt.subplots(figsize=(8, 4))
@@ -274,10 +301,19 @@ def plot_cluster_adjusted_stress_by_run_length(
             label="90% block-bootstrap interval",
         )
     ax.plot(run_lengths, lambda_values, marker="o", color="#8c2d04")
+    if independence_baseline is not None:
+        ax.plot(
+            run_lengths,
+            independence_baseline,
+            linestyle="--",
+            linewidth=1.2,
+            color="#1f1f1f",
+            label="i.i.d. finite-level baseline",
+        )
     ax.set_title("Cluster-adjusted stress by run length")
     ax.set_xlabel("run length")
     ax.set_ylabel("lambda")
-    if lower_bounds is not None and upper_bounds is not None:
+    if lower_bounds is not None and upper_bounds is not None or independence_baseline is not None:
         ax.legend(frameon=False, loc="upper left")
     fig.tight_layout()
     fig.savefig(path, dpi=160)

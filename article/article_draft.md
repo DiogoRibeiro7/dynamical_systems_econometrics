@@ -112,7 +112,7 @@ $$
 
 Interpretation:
 
-The exceedance rate measures how often the process enters the stress region, whereas the clustering coefficient measures how isolated those exceedances are once they occur. Dividing the first object by the second therefore leaves the benchmark case of independence unchanged and raises the stress load precisely when extreme events arrive in tighter temporal groups. The purpose of the functional is not to replace richer theories of tail dependence, but to convert clustering information into a scalar summary that can be compared alongside incidence and volatility measures.
+The exceedance rate measures how often the process enters the stress region, whereas the clustering coefficient measures how isolated those exceedances are once they occur. Dividing the first object by the second therefore rescales incidence by the inverse isolation probability and raises the stress load when extreme events arrive in tighter temporal groups. At a finite threshold, the honest zero-clustering reference is not `p(u)` itself but the independence benchmark `Lambda_indep(u, r) = p(u)/(1-p(u))^r`. The purpose of the functional is not to replace richer theories of tail dependence, but to convert clustering information into a scalar summary that can be compared alongside incidence and volatility measures.
 
 ### Proposition set
 
@@ -120,7 +120,8 @@ The exceedance rate measures how often the process enters the stress region, whe
    - for equal exceedance probability, a process with smaller clustering coefficient has larger cluster-adjusted stress.
 
 2. **Independent benchmark**
-   - if exceedances are temporally independent, then $\theta^{(r)}(u)=1$ and $\Lambda(u,r)=p(u)$.
+   - if exceedances are temporally independent, then $\theta^{(r)}(u)=(1-p(u))^r$ and $\Lambda_{\mathrm{indep}}(u,r)=p(u)/(1-p(u))^r$.
+   - along a high-threshold sequence with $p(u_n)\to 0$, this benchmark converges to the simpler asymptotic reference because $\theta_n^{(r)}\to 1$.
 
 3. **Plug-in consistency**
    - if the exceedance-rate and clustering estimators are consistent and the denominator stays away from zero, then the plug-in functional is consistent.
@@ -176,13 +177,13 @@ Threshold-based recurrence diagnostics carry two uncertainties at once: ordinary
 
 The existing threshold-sensitivity artifact already shows the issue clearly. For the benchmark observable used in the scan, the runs-based clustering estimate is `0.888` at the `0.90` quantile with `500` exceedances, `0.909` at the `0.93` quantile with `350` exceedances, and `1.000` from the `0.95` quantile onward as the exceedance count falls from `250` to `50`. The estimate therefore appears more stable at higher thresholds precisely when the effective sample is shrinking most aggressively.
 
-That pattern gives the uncertainty section its main point. A single clustering estimate is not enough. The updated artifacts are a first implementation step because they show both the threshold path for `theta` and the threshold path for the cluster-adjusted stress functional together with block-bootstrap uncertainty. For the threshold scan, the `Lambda` intervals are `[0.111, 0.118]`, `[0.076, 0.080]`, `[0.0498, 0.0512]`, `[0.0298, 0.0306]`, and `[0.0096, 0.0102]` as the threshold moves from `q=0.90` to `q=0.99`. A more complete applied version would still report run-length sensitivity alongside these intervals, but the core uncertainty treatment is now implemented for the functional itself rather than only for the clustering coefficient.
+That pattern gives the uncertainty section its main point, but only once the honest finite-level benchmark is included. A single clustering estimate is not enough. The updated artifacts now show both the threshold path for `theta` and the threshold path for the cluster-adjusted stress functional together with their i.i.d. references and block-bootstrap uncertainty. For the threshold scan, the `Lambda` path falls from `0.113` to `0.010`, while the corresponding finite-level independence benchmark falls from `0.152` to `0.010`. This is the correct null-calibration reading for the logistic benchmark observable: the path largely tracks the mechanical `(1-p)^r` effect rather than demonstrating excess clustering.
 
 Run-length sensitivity is the next layer of robustness because the declustering rule is itself part of the model of persistence. In the current run-length scan at threshold quantile `0.90`, the cluster-adjusted functional is `0.100` for run lengths `1` and `2`, then rises to `0.113`, `0.149`, and `0.206` for run lengths `4`, `6`, and `8`. The corresponding bootstrap intervals are `[0.0998, 0.1006]`, `[0.1002, 0.1012]`, `[0.1115, 0.1174]`, `[0.1445, 0.1591]`, and `[0.1968, 0.2213]`. The substantive point is that a longer quiet-period requirement mechanically increases the measured stress load by merging more exceedances into common episodes. That is not a flaw in the diagnostic; it is the reason the run-length choice must be reported explicitly.
 
 ### Compact robustness summary
 
-The manuscript now includes a compact robustness table so the main numerical results are visible in one place rather than scattered across figures and running prose. The table reports the threshold-path estimates for `Lambda` at `q=0.90, 0.93, 0.95, 0.97, 0.99` together with their bootstrap intervals, and the run-length-path estimates at `r=1, 2, 4, 6, 8` under fixed threshold quantile `0.90`. The threshold side shows how the functional becomes incidence-dominated as the cutoff rises and `theta` approaches one. The run-length side shows the opposite comparative statics: longer declustering windows raise the stress load because they absorb more exceedances into common episodes.
+The manuscript now includes a compact robustness table so the main numerical results are visible in one place rather than scattered across figures and running prose. The table reports the threshold-path estimates for `Lambda` at `q=0.90, 0.93, 0.95, 0.97, 0.99` together with their finite-level independence references and bootstrap intervals, and the run-length-path estimates at `r=1, 2, 4, 6, 8` under fixed threshold quantile `0.90`. The threshold side shows that the benchmark observable mostly tracks the null reference as the cutoff rises. The run-length side now makes the key correction explicit: raw monotonicity in `r` is mechanically present even under i.i.d. data, so only the gap to `Lambda_indep` can be read as evidence about clustering.
 
 ## Small empirical macro-financial panel
 

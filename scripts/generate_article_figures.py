@@ -364,8 +364,18 @@ def main() -> None:
             "threshold": [row.threshold for row in bootstrap_sensitivity],
             "n_exceedances": [row.n_exceedances for row in bootstrap_sensitivity],
             "n_clusters": [row.n_clusters for row in bootstrap_sensitivity],
+            "p_hat": [row.n_exceedances / observable.size for row in bootstrap_sensitivity],
+            "theta_indep": [
+                (1.0 - (row.n_exceedances / observable.size)) ** 4
+                for row in bootstrap_sensitivity
+            ],
             "theta_runs": [row.theta_runs for row in bootstrap_sensitivity],
             "theta_cluster_mean": [row.theta_cluster_mean for row in bootstrap_sensitivity],
+            "lambda_indep": [
+                (row.n_exceedances / observable.size)
+                / ((1.0 - (row.n_exceedances / observable.size)) ** 4)
+                for row in bootstrap_sensitivity
+            ],
             "lambda_runs": [row.lambda_runs for row in bootstrap_sensitivity],
             "theta_runs_ci_lower": [row.theta_runs_ci_lower for row in bootstrap_sensitivity],
             "theta_runs_ci_upper": [row.theta_runs_ci_upper for row in bootstrap_sensitivity],
@@ -380,6 +390,10 @@ def main() -> None:
         theta_values=[row.theta_runs for row in bootstrap_sensitivity],
         lower_bounds=[row.theta_runs_ci_lower for row in bootstrap_sensitivity],
         upper_bounds=[row.theta_runs_ci_upper for row in bootstrap_sensitivity],
+        independence_baseline=[
+            (1.0 - (row.n_exceedances / observable.size)) ** 4
+            for row in bootstrap_sensitivity
+        ],
         output_path=output_dir / "extremal_index_by_threshold.png",
     )
     plot_cluster_adjusted_stress_by_threshold(
@@ -387,6 +401,11 @@ def main() -> None:
         lambda_values=[row.lambda_runs for row in bootstrap_sensitivity],
         lower_bounds=[row.lambda_runs_ci_lower for row in bootstrap_sensitivity],
         upper_bounds=[row.lambda_runs_ci_upper for row in bootstrap_sensitivity],
+        independence_baseline=[
+            (row.n_exceedances / observable.size)
+            / ((1.0 - (row.n_exceedances / observable.size)) ** 4)
+            for row in bootstrap_sensitivity
+        ],
         output_path=output_dir / "cluster_adjusted_stress_by_threshold.png",
     )
     run_length_sensitivity = bootstrap_run_length_sensitivity_analysis(
@@ -405,7 +424,13 @@ def main() -> None:
             "threshold": [row.threshold for row in run_length_sensitivity],
             "n_exceedances": [row.n_exceedances for row in run_length_sensitivity],
             "n_clusters": [row.n_clusters for row in run_length_sensitivity],
+            "p_hat": [row.n_exceedances / observable.size for row in run_length_sensitivity],
             "theta_runs": [row.theta_runs for row in run_length_sensitivity],
+            "lambda_indep": [
+                (row.n_exceedances / observable.size)
+                / ((1.0 - (row.n_exceedances / observable.size)) ** row.run_length)
+                for row in run_length_sensitivity
+            ],
             "lambda_runs": [row.lambda_runs for row in run_length_sensitivity],
             "lambda_runs_ci_lower": [row.lambda_runs_ci_lower for row in run_length_sensitivity],
             "lambda_runs_ci_upper": [row.lambda_runs_ci_upper for row in run_length_sensitivity],
@@ -418,6 +443,11 @@ def main() -> None:
         lambda_values=[row.lambda_runs for row in run_length_sensitivity],
         lower_bounds=[row.lambda_runs_ci_lower for row in run_length_sensitivity],
         upper_bounds=[row.lambda_runs_ci_upper for row in run_length_sensitivity],
+        independence_baseline=[
+            (row.n_exceedances / observable.size)
+            / ((1.0 - (row.n_exceedances / observable.size)) ** row.run_length)
+            for row in run_length_sensitivity
+        ],
         output_path=output_dir / "cluster_adjusted_stress_by_run_length.png",
     )
     extremal_index_table = pd.DataFrame(
