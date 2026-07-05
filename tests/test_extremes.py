@@ -78,3 +78,41 @@ def test_return_times() -> None:
     values = np.array([0.0, 2.0, 0.0, 3.0, 0.0, 5.0], dtype=float)
     return_times = compute_return_times(values, threshold=1.0)
     assert return_times.tolist() == [2, 2]
+
+
+def test_perturbation_bound_is_additive_and_product_form_can_fail() -> None:
+    p_grid = [0.05, 0.1, 0.2, 0.35]
+    theta_grid = [0.08, 0.15, 0.3, 0.6]
+    eps_p_grid = [0.005, 0.01, 0.02]
+    eps_theta_grid = [0.01, 0.03, 0.05]
+
+    product_violation_found = False
+    for p in p_grid:
+        for theta in theta_grid:
+            for eps_p in eps_p_grid:
+                for eps_theta in eps_theta_grid:
+                    if eps_theta >= theta:
+                        continue
+
+                    additive_bound = (eps_p / (theta - eps_theta)) + (
+                        p * eps_theta / (theta * (theta - eps_theta))
+                    )
+                    product_bound = (eps_p / (theta - eps_theta)) * (
+                        p * eps_theta / (theta * (theta - eps_theta))
+                    )
+
+                    worst_case_error = 0.0
+                    for dp in (-eps_p, eps_p):
+                        for dtheta in (-eps_theta, eps_theta):
+                            p_tilde = p + dp
+                            theta_tilde = theta + dtheta
+                            if p_tilde <= 0.0 or theta_tilde <= 0.0:
+                                continue
+                            error = abs((p_tilde / theta_tilde) - (p / theta))
+                            worst_case_error = max(worst_case_error, error)
+
+                    assert worst_case_error <= additive_bound + 1e-12
+                    if worst_case_error > product_bound + 1e-12:
+                        product_violation_found = True
+
+    assert product_violation_found
