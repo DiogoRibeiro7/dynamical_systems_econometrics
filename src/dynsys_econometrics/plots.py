@@ -278,7 +278,7 @@ def plot_extremal_index_by_threshold(
             color="#1f1f1f",
             label="i.i.d. finite-level baseline",
         )
-    ax.set_title("Extremal index by threshold")
+    ax.set_title("Finite-level clustering coefficient by threshold")
     ax.set_xlabel("threshold quantile")
     ax.set_ylabel("theta")
     if lower_bounds is not None and upper_bounds is not None or independence_baseline is not None:
@@ -488,9 +488,9 @@ def plot_extremal_index_bars(
     else:
         fig = ax.figure
     ax.bar(table[series_col].astype(str), table[value_col].astype(float), color="#72b7b2")
-    ax.set_title("Extremal index by series")
+    ax.set_title("Finite-level clustering coefficient by series")
     ax.set_xlabel("series")
-    ax.set_ylabel("extremal index")
+    ax.set_ylabel("finite-level clustering coefficient")
     return fig, ax
 
 

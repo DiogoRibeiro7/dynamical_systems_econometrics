@@ -168,6 +168,57 @@ def _moving_block_bootstrap_indices(
     return indices[:n_observations].astype(np.int64, copy=False)
 
 
+def _estimate_runs_extremal_index_at_threshold(
+    values: FloatArray,
+    threshold: float,
+    run_length: int,
+) -> ExtremalIndexResult:
+    """Estimate the runs clustering coefficient at a fixed numeric threshold."""
+    _run_length_validation(run_length)
+    values_arr = _coerce_numeric_series(values)
+    if not np.isfinite(threshold):
+        raise ValueError("threshold must be finite.")
+
+    cluster_sizes = runs_declustering(values_arr, threshold=threshold, run_length=run_length)
+    n_exceedances = int(np.flatnonzero(values_arr > threshold).size)
+    if n_exceedances == 0:
+        return ExtremalIndexResult(float(threshold), run_length, 0, 0, float("nan"))
+
+    n_clusters = int(cluster_sizes.size)
+    theta_hat = float(n_clusters / n_exceedances)
+    return ExtremalIndexResult(
+        threshold=float(threshold),
+        run_length=run_length,
+        n_exceedances=n_exceedances,
+        n_clusters=n_clusters,
+        theta_hat=theta_hat,
+    )
+
+
+def _basic_bootstrap_interval(
+    draws: FloatArray,
+    point_estimate: float,
+    ci_level: float,
+    lower_bound: float = 0.0,
+) -> tuple[float, float]:
+    """Construct a basic bootstrap interval with a finite-precision containment guard."""
+    if draws.size == 0 or not np.isfinite(point_estimate):
+        return float("nan"), float("nan")
+
+    alpha = 1.0 - ci_level
+    lower_q = alpha / 2.0
+    upper_q = 1.0 - alpha / 2.0
+    lower = float(2.0 * point_estimate - np.quantile(draws, upper_q))
+    upper = float(2.0 * point_estimate - np.quantile(draws, lower_q))
+    if np.isfinite(lower_bound):
+        lower = max(lower_bound, lower)
+    if point_estimate < lower or point_estimate > upper:
+        radius = max(abs(point_estimate - lower), abs(upper - point_estimate))
+        lower = max(lower_bound, float(point_estimate - radius))
+        upper = float(point_estimate + radius)
+    return lower, upper
+
+
 def exceedance_indicator(values: FloatArray, threshold: float) -> BoolArray:
     """Return a boolean indicator for exceedances above a threshold."""
     values = _coerce_numeric_series(values)
@@ -387,20 +438,7 @@ def estimate_runs_extremal_index(
     if not 0.0 < threshold_quantile < 1.0:
         raise ValueError("threshold_quantile must be between 0 and 1.")
     threshold = float(np.quantile(values_arr, threshold_quantile))
-    cluster_sizes = runs_declustering(values_arr, threshold=threshold, run_length=run_length)
-    n_exceedances = int(np.flatnonzero(values_arr > threshold).size)
-    if n_exceedances == 0:
-        return ExtremalIndexResult(threshold, run_length, 0, 0, float("nan"))
-
-    n_clusters = int(cluster_sizes.size)
-    theta_hat = float(n_clusters / n_exceedances)
-    return ExtremalIndexResult(
-        threshold=threshold,
-        run_length=run_length,
-        n_exceedances=n_exceedances,
-        n_clusters=n_clusters,
-        theta_hat=float(theta_hat),
-    )
+    return _estimate_runs_extremal_index_at_threshold(values_arr, threshold, run_length)
 
 
 def estimate_extremal_index(
@@ -497,6 +535,7 @@ def bootstrap_threshold_sensitivity_analysis(
     ci_level: float = 0.90,
 ) -> tuple[BootstrapThresholdSensitivityResult, ...]:
     """Estimate threshold sensitivity together with moving-block bootstrap intervals."""
+    min_clusters_for_interval = 3
     values_arr = _coerce_numeric_series(values)
     _run_length_validation(run_length)
     _validate_positive_int(n_bootstrap, "n_bootstrap")
@@ -512,6 +551,7 @@ def bootstrap_threshold_sensitivity_analysis(
         run_length=run_length,
     )
     quantiles = [row.quantile for row in point_results]
+    thresholds = {row.quantile: row.threshold for row in point_results}
     rng = np.random.default_rng(seed)
     boot_thetas: dict[float, list[float]] = {q: [] for q in quantiles}
     boot_lambdas: dict[float, list[float]] = {q: [] for q in quantiles}
@@ -519,36 +559,47 @@ def bootstrap_threshold_sensitivity_analysis(
     for _ in range(n_bootstrap):
         sample_idx = _moving_block_bootstrap_indices(values_arr.size, block_size, rng)
         sample = values_arr[sample_idx]
-        boot_results = threshold_sensitivity_analysis(
-            sample,
-            threshold_quantiles=quantiles,
-            run_length=run_length,
-        )
-        for row in boot_results:
-            if np.isfinite(row.theta_runs):
-                boot_thetas[row.quantile].append(float(row.theta_runs))
-            if np.isfinite(row.lambda_runs):
-                boot_lambdas[row.quantile].append(float(row.lambda_runs))
+        for quantile in quantiles:
+            boot_row = _estimate_runs_extremal_index_at_threshold(
+                sample,
+                threshold=thresholds[quantile],
+                run_length=run_length,
+            )
+            if np.isfinite(boot_row.theta_hat):
+                boot_thetas[quantile].append(float(boot_row.theta_hat))
+            if (
+                boot_row.n_exceedances
+                and np.isfinite(boot_row.theta_hat)
+                and boot_row.theta_hat > 0.0
+            ):
+                boot_lambdas[quantile].append(
+                    float((boot_row.n_exceedances / sample.size) / boot_row.theta_hat)
+                )
 
-    alpha = 1.0 - ci_level
-    lower_q = alpha / 2.0
-    upper_q = 1.0 - alpha / 2.0
     summary: list[BootstrapThresholdSensitivityResult] = []
     for row in point_results:
         draws = np.asarray(boot_thetas[row.quantile], dtype=np.float64)
         lambda_draws = np.asarray(boot_lambdas[row.quantile], dtype=np.float64)
-        if draws.size == 0:
+        if draws.size == 0 or row.n_clusters < min_clusters_for_interval:
             lower = float("nan")
             upper = float("nan")
         else:
-            lower = float(np.quantile(draws, lower_q))
-            upper = float(np.quantile(draws, upper_q))
-        if lambda_draws.size == 0:
+            lower, upper = _basic_bootstrap_interval(
+                draws=draws,
+                point_estimate=float(row.theta_runs),
+                ci_level=ci_level,
+                lower_bound=0.0,
+            )
+        if lambda_draws.size == 0 or row.n_clusters < min_clusters_for_interval:
             lambda_lower = float("nan")
             lambda_upper = float("nan")
         else:
-            lambda_lower = float(np.quantile(lambda_draws, lower_q))
-            lambda_upper = float(np.quantile(lambda_draws, upper_q))
+            lambda_lower, lambda_upper = _basic_bootstrap_interval(
+                draws=lambda_draws,
+                point_estimate=float(row.lambda_runs),
+                ci_level=ci_level,
+                lower_bound=0.0,
+            )
         summary.append(
             BootstrapThresholdSensitivityResult(
                 quantile=row.quantile,
@@ -619,6 +670,7 @@ def bootstrap_run_length_sensitivity_analysis(
     ci_level: float = 0.90,
 ) -> tuple[BootstrapRunLengthSensitivityResult, ...]:
     """Estimate run-length sensitivity for lambda together with bootstrap intervals."""
+    min_clusters_for_interval = 3
     values_arr = _coerce_numeric_series(values)
     _validate_positive_int(n_bootstrap, "n_bootstrap")
     _validate_positive_int(block_size, "block_size")
@@ -633,33 +685,41 @@ def bootstrap_run_length_sensitivity_analysis(
         run_lengths=run_lengths,
     )
     run_lengths_list = [row.run_length for row in point_results]
+    fixed_threshold = float(point_results[0].threshold)
     rng = np.random.default_rng(seed)
     boot_lambdas: dict[int, list[float]] = {run_length: [] for run_length in run_lengths_list}
 
     for _ in range(n_bootstrap):
         sample_idx = _moving_block_bootstrap_indices(values_arr.size, block_size, rng)
         sample = values_arr[sample_idx]
-        boot_results = run_length_sensitivity_analysis(
-            sample,
-            threshold_quantile=threshold_quantile,
-            run_lengths=run_lengths_list,
-        )
-        for row in boot_results:
-            if np.isfinite(row.lambda_runs):
-                boot_lambdas[row.run_length].append(float(row.lambda_runs))
+        for run_length in run_lengths_list:
+            boot_row = _estimate_runs_extremal_index_at_threshold(
+                sample,
+                threshold=fixed_threshold,
+                run_length=run_length,
+            )
+            if (
+                boot_row.n_exceedances
+                and np.isfinite(boot_row.theta_hat)
+                and boot_row.theta_hat > 0.0
+            ):
+                boot_lambdas[run_length].append(
+                    float((boot_row.n_exceedances / sample.size) / boot_row.theta_hat)
+                )
 
-    alpha = 1.0 - ci_level
-    lower_q = alpha / 2.0
-    upper_q = 1.0 - alpha / 2.0
     summary: list[BootstrapRunLengthSensitivityResult] = []
     for row in point_results:
         draws = np.asarray(boot_lambdas[row.run_length], dtype=np.float64)
-        if draws.size == 0:
+        if draws.size == 0 or row.n_clusters < min_clusters_for_interval:
             lower = float("nan")
             upper = float("nan")
         else:
-            lower = float(np.quantile(draws, lower_q))
-            upper = float(np.quantile(draws, upper_q))
+            lower, upper = _basic_bootstrap_interval(
+                draws=draws,
+                point_estimate=float(row.lambda_runs),
+                ci_level=ci_level,
+                lower_bound=0.0,
+            )
         summary.append(
             BootstrapRunLengthSensitivityResult(
                 run_length=row.run_length,

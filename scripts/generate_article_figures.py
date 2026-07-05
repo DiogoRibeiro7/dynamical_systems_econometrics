@@ -180,9 +180,87 @@ def _return_time_diagnostic(
     return summary, qq_table
 
 
+def _cluster_interval_note(n_clusters: int) -> str:
+    """Return an interpretability note for low-cluster bootstrap summaries."""
+    return "" if n_clusters >= 3 else f"interval not interpretable, k clusters = {n_clusters}"
+
+
+def _clustered_benchmark_coverage_table() -> pd.DataFrame:
+    """Build a small coverage harness for the clustered synthetic benchmark."""
+    threshold_quantile = 0.90
+    run_length = 3
+    ci_level = 0.90
+    n_replications = 40
+    n_bootstrap = 120
+    block_size = 40
+
+    reference_values = np.abs(simulate_garch11(n_steps=100_000, seed=611))
+    reference_row = bootstrap_threshold_sensitivity_analysis(
+        reference_values,
+        threshold_quantiles=[threshold_quantile],
+        run_length=run_length,
+        n_bootstrap=n_bootstrap,
+        block_size=block_size,
+        seed=701,
+        ci_level=ci_level,
+    )[0]
+
+    theta_covered: list[bool] = []
+    lambda_covered: list[bool] = []
+    theta_widths: list[float] = []
+    lambda_widths: list[float] = []
+
+    for replication in range(n_replications):
+        sample = np.abs(simulate_garch11(n_steps=3000, seed=800 + replication))
+        row = bootstrap_threshold_sensitivity_analysis(
+            sample,
+            threshold_quantiles=[threshold_quantile],
+            run_length=run_length,
+            n_bootstrap=n_bootstrap,
+            block_size=block_size,
+            seed=1600 + replication,
+            ci_level=ci_level,
+        )[0]
+        if np.isfinite(row.theta_runs_ci_lower) and np.isfinite(row.theta_runs_ci_upper):
+            theta_covered.append(
+                bool(row.theta_runs_ci_lower <= reference_row.theta_runs <= row.theta_runs_ci_upper)
+            )
+            theta_widths.append(float(row.theta_runs_ci_upper - row.theta_runs_ci_lower))
+        if np.isfinite(row.lambda_runs_ci_lower) and np.isfinite(row.lambda_runs_ci_upper):
+            lambda_covered.append(
+                bool(row.lambda_runs_ci_lower <= reference_row.lambda_runs <= row.lambda_runs_ci_upper)
+            )
+            lambda_widths.append(float(row.lambda_runs_ci_upper - row.lambda_runs_ci_lower))
+
+    return pd.DataFrame(
+        [
+            {
+                "series_id": "clustered_stress",
+                "reference_design": "abs_garch11_long_run_reference",
+                "reference_n_observations": 100_000,
+                "threshold_quantile": threshold_quantile,
+                "run_length": run_length,
+                "ci_level": ci_level,
+                "interval_method": "basic bootstrap with fixed original threshold",
+                "n_replications": n_replications,
+                "bootstrap_replicates": n_bootstrap,
+                "block_size": block_size,
+                "reference_theta": float(reference_row.theta_runs),
+                "reference_lambda": float(reference_row.lambda_runs),
+                "theta_coverage": float(np.mean(theta_covered)) if theta_covered else float("nan"),
+                "theta_mean_width": float(np.mean(theta_widths)) if theta_widths else float("nan"),
+                "theta_interpretable_replications": len(theta_covered),
+                "lambda_coverage": float(np.mean(lambda_covered)) if lambda_covered else float("nan"),
+                "lambda_mean_width": float(np.mean(lambda_widths)) if lambda_widths else float("nan"),
+                "lambda_interpretable_replications": len(lambda_covered),
+            }
+        ]
+    )
+
+
 def _build_empirical_illustration(
     repo_root: Path,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Build a small empirical macro-financial panel from cleaned FRED CSV files."""
     empirical_threshold_quantile = 0.90
     empirical_threshold_grid = [0.90, 0.93, 0.95, 0.97]
@@ -242,6 +320,9 @@ def _build_empirical_illustration(
         summary_rows.append(
             {
                 "series_id": series_id,
+                "display_name": series_id,
+                "transformation": "level",
+                "descriptive_only": bool(result.n_clusters < 3),
                 "sample_start": str(common.index.min().date()),
                 "sample_end": str(common.index.max().date()),
                 "n_observations": int(len(values)),
@@ -256,6 +337,9 @@ def _build_empirical_illustration(
                 "theta_runs_ci_upper": float(bootstrap_row.theta_runs_ci_upper),
                 "lambda_runs_ci_lower": float(bootstrap_row.lambda_runs_ci_lower),
                 "lambda_runs_ci_upper": float(bootstrap_row.lambda_runs_ci_upper),
+                "theta_interval_note": _cluster_interval_note(int(result.n_clusters)),
+                "lambda_interval_note": _cluster_interval_note(int(result.n_clusters)),
+                "interval_method": "basic bootstrap with fixed original threshold",
                 "n_bootstrap": empirical_n_bootstrap,
                 "block_size": empirical_block_size,
                 "ci_level": empirical_ci_level,
@@ -315,6 +399,51 @@ def _build_empirical_illustration(
                 }
             )
 
+    unrate_diff12 = common["unrate"].diff(12).dropna()
+    transformed_bootstrap = bootstrap_threshold_sensitivity_analysis(
+        unrate_diff12.to_numpy(),
+        threshold_quantiles=empirical_threshold_grid,
+        run_length=empirical_run_length,
+        n_bootstrap=empirical_n_bootstrap,
+        block_size=empirical_block_size,
+        seed=211,
+        ci_level=empirical_ci_level,
+    )
+    transformed_row = transformed_bootstrap[0]
+    transformed_result = estimate_runs_extremal_index(
+        unrate_diff12.to_numpy(),
+        threshold_quantile=empirical_threshold_quantile,
+        run_length=empirical_run_length,
+    )
+    summary_rows.append(
+        {
+            "series_id": "unrate_diff12",
+            "display_name": "unrate",
+            "transformation": "12m_diff",
+            "descriptive_only": bool(transformed_result.n_clusters < 3),
+            "sample_start": str(unrate_diff12.index.min().date()),
+            "sample_end": str(unrate_diff12.index.max().date()),
+            "n_observations": int(len(unrate_diff12)),
+            "threshold_quantile": empirical_threshold_quantile,
+            "run_length": empirical_run_length,
+            "threshold": float(transformed_result.threshold),
+            "n_exceedances": int(transformed_result.n_exceedances),
+            "n_clusters": int(transformed_result.n_clusters),
+            "theta_runs": float(transformed_result.theta_hat),
+            "lambda_runs": float((transformed_result.n_exceedances / len(unrate_diff12)) / transformed_result.theta_hat),
+            "theta_runs_ci_lower": float(transformed_row.theta_runs_ci_lower),
+            "theta_runs_ci_upper": float(transformed_row.theta_runs_ci_upper),
+            "lambda_runs_ci_lower": float(transformed_row.lambda_runs_ci_lower),
+            "lambda_runs_ci_upper": float(transformed_row.lambda_runs_ci_upper),
+            "theta_interval_note": _cluster_interval_note(int(transformed_result.n_clusters)),
+            "lambda_interval_note": _cluster_interval_note(int(transformed_result.n_clusters)),
+            "interval_method": "basic bootstrap with fixed original threshold",
+            "n_bootstrap": empirical_n_bootstrap,
+            "block_size": empirical_block_size,
+            "ci_level": empirical_ci_level,
+        }
+    )
+
     exceedance_frame = exceedance_matrix.copy()
     exceedance_frame.insert(0, "date", common.index)
     stress_timeline = stress_state_index(exceedance_frame)
@@ -322,7 +451,13 @@ def _build_empirical_illustration(
     stress_timeline["joint_exceedance"] = stress_timeline["n_active"] >= 2
     panel = panel.merge(stress_timeline, on="date", how="left")
 
-    return panel, pd.DataFrame(summary_rows), pd.DataFrame(threshold_rows), pd.DataFrame(run_length_rows)
+    return (
+        panel,
+        pd.DataFrame(summary_rows),
+        pd.DataFrame(threshold_rows),
+        pd.DataFrame(run_length_rows),
+        _clustered_benchmark_coverage_table(),
+    )
 
 
 def main() -> None:
@@ -652,11 +787,18 @@ def main() -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "06_econometric_vs_recurrence_diagnostics.png", dpi=160)
 
-    empirical_merged, empirical_summary, empirical_threshold_summary, empirical_run_length_summary = _build_empirical_illustration(repo_root)
+    (
+        empirical_merged,
+        empirical_summary,
+        empirical_threshold_summary,
+        empirical_run_length_summary,
+        empirical_coverage_summary,
+    ) = _build_empirical_illustration(repo_root)
     empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
     empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
-    empirical_threshold_summary.to_csv(output_dir / "07_real_data_threshold_sensitivity_source.csv", index=False)
-    empirical_run_length_summary.to_csv(output_dir / "07_real_data_run_length_sensitivity_source.csv", index=False)
+    empirical_threshold_summary.to_csv(output_dir / "08_real_data_threshold_sensitivity_source.csv", index=False)
+    empirical_run_length_summary.to_csv(output_dir / "08_real_data_run_length_sensitivity_source.csv", index=False)
+    empirical_coverage_summary.to_csv(output_dir / "07_clustered_bootstrap_coverage_source.csv", index=False)
     plot_empirical_stress_illustration(
         panel=empirical_merged,
         output_path=output_dir / "07_real_data_stress_illustration.png",
@@ -664,7 +806,7 @@ def main() -> None:
     plot_empirical_lambda_robustness(
         threshold_table=empirical_threshold_summary,
         run_length_table=empirical_run_length_summary,
-        output_path=output_dir / "07_real_data_lambda_robustness.png",
+        output_path=output_dir / "08_real_data_lambda_robustness.png",
     )
 
     summary_paths = [
@@ -675,7 +817,7 @@ def main() -> None:
         output_dir / "05_multivariate_stress_timeline.png",
         output_dir / "06_econometric_vs_recurrence_diagnostics.png",
         output_dir / "07_real_data_stress_illustration.png",
-        output_dir / "07_real_data_lambda_robustness.png",
+        output_dir / "08_real_data_lambda_robustness.png",
         output_dir / "simulated_orbit_and_observable.png",
         output_dir / "threshold_exceedances.png",
         output_dir / "clustered_vs_isolated_extremes.png",

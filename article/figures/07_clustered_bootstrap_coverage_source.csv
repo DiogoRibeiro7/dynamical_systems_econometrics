@@ -1,0 +1,2 @@
+series_id,reference_design,reference_n_observations,threshold_quantile,run_length,ci_level,interval_method,n_replications,bootstrap_replicates,block_size,reference_theta,reference_lambda,theta_coverage,theta_mean_width,theta_interpretable_replications,lambda_coverage,lambda_mean_width,lambda_interpretable_replications
+clustered_stress,abs_garch11_long_run_reference,100000,0.9,3,0.9,basic bootstrap with fixed original threshold,40,120,40,0.6461,0.15477480266212662,0.875,0.10287115063392363,40,1.0,0.05612713465071817,40
