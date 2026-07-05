@@ -502,6 +502,83 @@ def plot_empirical_stress_illustration(
     plt.close(fig)
 
 
+def plot_empirical_lambda_robustness(
+    threshold_table: pd.DataFrame,
+    run_length_table: pd.DataFrame,
+    output_path: str | Path,
+) -> None:
+    """Plot empirical Lambda robustness over thresholds and run lengths."""
+    threshold_required = {
+        "series_id",
+        "threshold_quantile",
+        "lambda_runs",
+        "lambda_runs_ci_lower",
+        "lambda_runs_ci_upper",
+    }
+    run_length_required = {
+        "series_id",
+        "run_length",
+        "lambda_runs",
+        "lambda_runs_ci_lower",
+        "lambda_runs_ci_upper",
+    }
+    missing_threshold = threshold_required.difference(threshold_table.columns)
+    missing_run_length = run_length_required.difference(run_length_table.columns)
+    if missing_threshold:
+        raise ValueError(f"Missing required threshold-table columns: {sorted(missing_threshold)}")
+    if missing_run_length:
+        raise ValueError(f"Missing required run-length-table columns: {sorted(missing_run_length)}")
+
+    path = _ensure_parent_dir(output_path)
+    threshold_frame = threshold_table.copy()
+    run_length_frame = run_length_table.copy()
+    palette = {
+        "unrate": "#c45b12",
+        "baa10ym": "#4c78a8",
+        "kcfsi": "#54a24b",
+    }
+    labels = {
+        "unrate": "Unemployment rate",
+        "baa10ym": "Baa-Treasury spread",
+        "kcfsi": "KCFSI",
+    }
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 4.6), sharey=False)
+
+    for series_id, group in threshold_frame.groupby("series_id", sort=False):
+        local = group.sort_values("threshold_quantile")
+        x = pd.to_numeric(local["threshold_quantile"], errors="raise")
+        y = pd.to_numeric(local["lambda_runs"], errors="raise")
+        lower = pd.to_numeric(local["lambda_runs_ci_lower"], errors="raise")
+        upper = pd.to_numeric(local["lambda_runs_ci_upper"], errors="raise")
+        color = palette.get(str(series_id), "#14213d")
+        axes[0].fill_between(x, lower, upper, color=color, alpha=0.15)
+        axes[0].plot(x, y, marker="o", linewidth=1.4, color=color, label=labels.get(str(series_id), str(series_id)))
+
+    axes[0].set_title("Lambda by threshold")
+    axes[0].set_xlabel("threshold quantile")
+    axes[0].set_ylabel("cluster-adjusted stress")
+    axes[0].legend(frameon=False, fontsize=8, loc="upper right")
+
+    for series_id, group in run_length_frame.groupby("series_id", sort=False):
+        local = group.sort_values("run_length")
+        x = pd.to_numeric(local["run_length"], errors="raise")
+        y = pd.to_numeric(local["lambda_runs"], errors="raise")
+        lower = pd.to_numeric(local["lambda_runs_ci_lower"], errors="raise")
+        upper = pd.to_numeric(local["lambda_runs_ci_upper"], errors="raise")
+        color = palette.get(str(series_id), "#14213d")
+        axes[1].fill_between(x, lower, upper, color=color, alpha=0.15)
+        axes[1].plot(x, y, marker="o", linewidth=1.4, color=color, label=labels.get(str(series_id), str(series_id)))
+
+    axes[1].set_title("Lambda by run length")
+    axes[1].set_xlabel("run length")
+    axes[1].set_ylabel("cluster-adjusted stress")
+
+    fig.tight_layout(w_pad=2.0)
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
 def plot_conceptual_pipeline(
     stages: list[str],
     output_path: str | Path,

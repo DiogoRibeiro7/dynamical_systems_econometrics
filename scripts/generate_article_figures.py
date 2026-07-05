@@ -24,6 +24,7 @@ from dynsys_econometrics.plots import (
     plot_cluster_adjusted_stress_by_threshold,
     plot_clustered_vs_isolated_extremes,
     plot_conceptual_pipeline,
+    plot_empirical_lambda_robustness,
     plot_empirical_stress_illustration,
     plot_extremal_index_bars,
     plot_extremal_index_by_threshold,
@@ -504,6 +505,11 @@ def main() -> None:
         panel=empirical_merged,
         output_path=output_dir / "07_real_data_stress_illustration.png",
     )
+    plot_empirical_lambda_robustness(
+        threshold_table=empirical_threshold_summary,
+        run_length_table=empirical_run_length_summary,
+        output_path=output_dir / "07_real_data_lambda_robustness.png",
+    )
 
     summary_paths = [
         output_dir / "01_conceptual_pipeline.png",
@@ -513,6 +519,7 @@ def main() -> None:
         output_dir / "05_multivariate_stress_timeline.png",
         output_dir / "06_econometric_vs_recurrence_diagnostics.png",
         output_dir / "07_real_data_stress_illustration.png",
+        output_dir / "07_real_data_lambda_robustness.png",
         output_dir / "simulated_orbit_and_observable.png",
         output_dir / "threshold_exceedances.png",
         output_dir / "clustered_vs_isolated_extremes.png",
