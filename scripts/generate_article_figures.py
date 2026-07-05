@@ -84,10 +84,12 @@ def _build_stress_heatmap_frame() -> pd.DataFrame:
     return rolling.iloc[::5].reset_index(drop=True)
 
 
-def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
+def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Build a small empirical macro-financial panel from cleaned FRED CSV files."""
     empirical_threshold_quantile = 0.90
+    empirical_threshold_grid = [0.90, 0.93, 0.95, 0.97]
     empirical_run_length = 3
+    empirical_run_length_grid = [1, 2, 4, 6, 8]
     empirical_n_bootstrap = 250
     empirical_block_size = 36
     empirical_seed = 97
@@ -114,17 +116,14 @@ def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.Dat
     panel = pd.DataFrame({"date": common.index})
     exceedance_matrix = pd.DataFrame(index=common.index)
     summary_rows: list[dict[str, float | int | str]] = []
+    threshold_rows: list[dict[str, float | int | str]] = []
+    run_length_rows: list[dict[str, float | int | str]] = []
 
     for series_id in common.columns:
         values = common[series_id]
-        result = estimate_runs_extremal_index(
-            values.to_numpy(),
-            threshold_quantile=empirical_threshold_quantile,
-            run_length=empirical_run_length,
-        )
         bootstrap_result = bootstrap_threshold_sensitivity_analysis(
             values.to_numpy(),
-            threshold_quantiles=[empirical_threshold_quantile],
+            threshold_quantiles=empirical_threshold_grid,
             run_length=empirical_run_length,
             n_bootstrap=empirical_n_bootstrap,
             block_size=empirical_block_size,
@@ -132,6 +131,11 @@ def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.Dat
             ci_level=empirical_ci_level,
         )
         bootstrap_row = bootstrap_result[0]
+        result = estimate_runs_extremal_index(
+            values.to_numpy(),
+            threshold_quantile=empirical_threshold_quantile,
+            run_length=empirical_run_length,
+        )
         exceedance = values > result.threshold
         panel[series_id] = values.to_numpy()
         panel[f"{series_id}_threshold"] = result.threshold
@@ -159,6 +163,59 @@ def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.Dat
                 "ci_level": empirical_ci_level,
             }
         )
+        for threshold_row in bootstrap_result:
+            threshold_rows.append(
+                {
+                    "series_id": series_id,
+                    "sample_start": str(common.index.min().date()),
+                    "sample_end": str(common.index.max().date()),
+                    "n_observations": int(len(values)),
+                    "threshold_quantile": float(threshold_row.quantile),
+                    "run_length": empirical_run_length,
+                    "threshold": float(threshold_row.threshold),
+                    "n_exceedances": int(threshold_row.n_exceedances),
+                    "n_clusters": int(threshold_row.n_clusters),
+                    "theta_runs": float(threshold_row.theta_runs),
+                    "theta_runs_ci_lower": float(threshold_row.theta_runs_ci_lower),
+                    "theta_runs_ci_upper": float(threshold_row.theta_runs_ci_upper),
+                    "lambda_runs": float(threshold_row.lambda_runs),
+                    "lambda_runs_ci_lower": float(threshold_row.lambda_runs_ci_lower),
+                    "lambda_runs_ci_upper": float(threshold_row.lambda_runs_ci_upper),
+                    "n_bootstrap": empirical_n_bootstrap,
+                    "block_size": empirical_block_size,
+                    "ci_level": empirical_ci_level,
+                }
+            )
+        run_length_result = bootstrap_run_length_sensitivity_analysis(
+            values.to_numpy(),
+            threshold_quantile=empirical_threshold_quantile,
+            run_lengths=empirical_run_length_grid,
+            n_bootstrap=empirical_n_bootstrap,
+            block_size=empirical_block_size,
+            seed=101,
+            ci_level=empirical_ci_level,
+        )
+        for run_length_row in run_length_result:
+            run_length_rows.append(
+                {
+                    "series_id": series_id,
+                    "sample_start": str(common.index.min().date()),
+                    "sample_end": str(common.index.max().date()),
+                    "n_observations": int(len(values)),
+                    "threshold_quantile": empirical_threshold_quantile,
+                    "run_length": int(run_length_row.run_length),
+                    "threshold": float(run_length_row.threshold),
+                    "n_exceedances": int(run_length_row.n_exceedances),
+                    "n_clusters": int(run_length_row.n_clusters),
+                    "theta_runs": float(run_length_row.theta_runs),
+                    "lambda_runs": float(run_length_row.lambda_runs),
+                    "lambda_runs_ci_lower": float(run_length_row.lambda_runs_ci_lower),
+                    "lambda_runs_ci_upper": float(run_length_row.lambda_runs_ci_upper),
+                    "n_bootstrap": empirical_n_bootstrap,
+                    "block_size": empirical_block_size,
+                    "ci_level": empirical_ci_level,
+                }
+            )
 
     exceedance_frame = exceedance_matrix.copy()
     exceedance_frame.insert(0, "date", common.index)
@@ -167,7 +224,7 @@ def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.Dat
     stress_timeline["joint_exceedance"] = stress_timeline["n_active"] >= 2
     panel = panel.merge(stress_timeline, on="date", how="left")
 
-    return panel, pd.DataFrame(summary_rows)
+    return panel, pd.DataFrame(summary_rows), pd.DataFrame(threshold_rows), pd.DataFrame(run_length_rows)
 
 
 def main() -> None:
@@ -438,9 +495,11 @@ def main() -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "06_econometric_vs_recurrence_diagnostics.png", dpi=160)
 
-    empirical_merged, empirical_summary = _build_empirical_illustration(repo_root)
+    empirical_merged, empirical_summary, empirical_threshold_summary, empirical_run_length_summary = _build_empirical_illustration(repo_root)
     empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
     empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
+    empirical_threshold_summary.to_csv(output_dir / "07_real_data_threshold_sensitivity_source.csv", index=False)
+    empirical_run_length_summary.to_csv(output_dir / "07_real_data_run_length_sensitivity_source.csv", index=False)
     plot_empirical_stress_illustration(
         panel=empirical_merged,
         output_path=output_dir / "07_real_data_stress_illustration.png",
