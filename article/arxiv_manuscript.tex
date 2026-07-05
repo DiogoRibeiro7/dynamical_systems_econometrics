@@ -30,6 +30,7 @@
 \emergencystretch=2em
 
 \newtheorem{proposition}{Proposition}
+\newtheorem{corollary}{Corollary}
 \newtheorem{lemma}{Lemma}
 \newtheorem{remark}{Remark}
 
@@ -221,6 +222,36 @@ which exceeds $p(u_n)$ whenever $p(u_n)>0$. This benchmark is the correct finite
 The functional is also non-injective in a way that matters empirically. A rare but strongly clustered regime and a more frequent but weakly clustered regime can generate the same value of $\Lambda$. For that reason, $\Lambda$ should never be reported in isolation. The pair $(\widehat{p}_n,\widehat{\theta}_n^{(r)})$ must accompany it whenever substantive interpretation is attempted.
 
 The simplicity of the definition is intentional. The aim is not to compete with the richer theory of tail processes or extremal dependence structures, but to produce a scalar summary that remains mathematically interpretable while being usable inside an applied stress workflow.
+
+\subsection{Compound-Poisson interpretation}
+
+The definition above acquires a more precise probabilistic home once it is placed inside the standard compound-Poisson limit for exceedance point processes under dependence; see Leadbetter, Lindgren, and Rootz\'en \cite{leadbetter1983} for the general framework and Hsing, H\"usler, and Leadbetter \cite{hsing1988} for the exceedance-point-process formulation. Fix a threshold sequence $u_n$ such that
+\[
+n\,p(u_n)\to \tau \in (0,\infty),
+\]
+and let
+\[
+N_n=\sum_{t=1}^n \mathbf{1}\{X_t>u_n\}\,\delta_{t/n}
+\]
+denote the normalized exceedance point process. Under the usual mixing and anti-clustering conditions, $N_n$ converges to a compound Poisson process
+\[
+N=\sum_{j=1}^{\infty}\xi_j \delta_{\Gamma_j},
+\]
+where the cluster centers $\Gamma_j$ form a Poisson process on $[0,1]$ with rate $\theta\tau$ and the marks $\xi_j$ are i.i.d. cluster sizes with mean $\mathbb{E}\xi_j=1/\theta$.
+
+\begin{corollary}[Interpretation of $\Lambda$ under clustered exceedance limits]
+Under the compound-Poisson limit above, the expected number of cluster centers over $n$ periods is asymptotically $n\,\theta\,p(u_n)$, while the expected total number of exceedances is asymptotically
+\[
+n\,\theta\,p(u_n)\cdot \frac{1}{\theta}=n\,p(u_n).
+\]
+Consequently,
+\[
+n\,\Lambda_n(u_n,r)=\frac{n\,p(u_n)}{\theta_n^{(r)}}
+\]
+is the expected exceedance count re-expressed through mean cluster size. Equivalently, $\Lambda_n(u_n,r)=p(u_n)/\theta_n^{(r)}$ is a per-period cluster-weighted load: it starts from the marginal exceedance rate and then scales that rate by the average size of an exceedance episode.
+\end{corollary}
+
+This corollary does not introduce new theory, and it should not be sold as one. Its role is interpretive. The point is that $\Lambda$ is not just an ad hoc ratio built from two finite-threshold summaries. In the classical clustered-point-process limit, the numerator records how much exceedance mass enters the sample, while the denominator records how fragmented that mass is across episodes. Dividing by $\theta$ therefore weights incidence by average episode size. That is exactly the reading needed for the empirical sections below, where two series can have similar threshold-hit frequencies but very different temporal organization once exceedances begin to arrive.
 
 \subsection{Basic properties}
 
@@ -577,6 +608,11 @@ Hitting time statistics and extreme value theory.
 Masayuki Hirata, Beno\^\i t Saussol, and Sandro Vaienti.
 Statistics of return times: a general framework and new applications.
 \textit{Communications in Mathematical Physics}, 206:33--55, 1999.
+
+\bibitem{hsing1988}
+T. Hsing, J. H\"usler, and M. R. Leadbetter.
+On the exceedance point process for a stationary sequence.
+\textit{Probability Theory and Related Fields}, 78:97--112, 1988.
 
 \bibitem{leadbetter1983}
 M. R. Leadbetter, Georg Lindgren, and Holger Rootz\'en.
