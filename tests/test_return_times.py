@@ -7,6 +7,8 @@ from dynsys_econometrics.return_times import (
     ReturnTimeDistribution,
     empirical_survival_curve,
     exponential_benchmark_comparison,
+    ferro_segers_intervals_estimator,
+    fitted_mixture_quantiles,
     first_hitting_time,
     ks_exponential_diagnostic,
     return_time_distribution,
@@ -60,3 +62,27 @@ def test_ks_exponential_diagnostic_for_short_series() -> None:
     assert 0.0 <= statistic <= 1.0
     assert 0.0 <= pvalue <= 1.0
     assert isinstance(reject, bool)
+
+
+def test_ferro_segers_intervals_estimator_moment_variant() -> None:
+    result = ferro_segers_intervals_estimator([1, 1, 2])
+    assert result.estimator_variant == "moment"
+    assert result.n_intervals == 3
+    assert result.max_interval == 2
+    assert result.theta_hat == pytest.approx(1.0)
+
+
+def test_ferro_segers_intervals_estimator_bias_corrected_variant() -> None:
+    result = ferro_segers_intervals_estimator([3, 5, 9])
+    expected = min(1.0, 2.0 * (14.0**2) / (3.0 * ((2.0 * 1.0) + (4.0 * 3.0) + (8.0 * 7.0))))
+    assert result.estimator_variant == "bias_corrected"
+    assert result.n_intervals == 3
+    assert result.max_interval == 9
+    assert result.theta_hat == pytest.approx(expected)
+
+
+def test_fitted_mixture_quantiles_respect_atom() -> None:
+    quantiles = fitted_mixture_quantiles([0.10, 0.25, 0.60], theta_hat=0.75)
+    assert quantiles[0] == pytest.approx(0.0)
+    assert quantiles[1] == pytest.approx(0.0)
+    assert quantiles[2] == pytest.approx(-np.log(0.4 / 0.75) / 0.75)

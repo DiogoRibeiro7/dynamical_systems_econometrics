@@ -33,11 +33,16 @@ from dynsys_econometrics.plots import (
     plot_macro_financial_timeline,
     plot_multivariate_stress_heatmap,
     plot_orbit_and_observable,
+    plot_return_time_mixture_comparison,
     plot_return_time_exponential_comparison,
     plot_return_time_distribution,
     plot_threshold_exceedances,
 )
-from dynsys_econometrics.return_times import compute_return_times
+from dynsys_econometrics.return_times import (
+    compute_return_times,
+    ferro_segers_intervals_estimator,
+    fitted_mixture_quantiles,
+)
 from dynsys_econometrics.simulation import (
     logistic_map,
     simulate_coupled_logistic_maps,
@@ -108,6 +113,7 @@ def _moving_block_bootstrap_indices(
 def _return_time_diagnostic(
     values: np.ndarray,
     threshold_quantile: float,
+    run_length: int,
     series_id: str,
     block_size: int,
     n_bootstrap: int,
@@ -126,6 +132,13 @@ def _return_time_diagnostic(
     plotting_probability = (np.arange(ordered.size, dtype=float) + 0.5) / ordered.size
     theoretical_quantile = -np.log1p(-plotting_probability)
     ks_statistic = float(kstest(ordered, "expon").statistic)
+    runs_result = estimate_runs_extremal_index(
+        sample,
+        threshold_quantile=threshold_quantile,
+        run_length=run_length,
+    )
+    intervals_result = ferro_segers_intervals_estimator(return_times)
+    mixture_quantile = fitted_mixture_quantiles(plotting_probability, intervals_result.theta_hat)
 
     rng = np.random.default_rng(seed)
     bootstrap_statistics: list[float] = []
@@ -151,6 +164,7 @@ def _return_time_diagnostic(
             {
                 "series_id": series_id,
                 "threshold_quantile": threshold_quantile,
+                "run_length": run_length,
                 "threshold": threshold,
                 "exceedance_rate": exceedance_rate,
                 "n_exceedances": int(np.sum(sample > threshold)),
@@ -161,6 +175,9 @@ def _return_time_diagnostic(
                 "max_return_time": int(np.max(return_times)),
                 "normalized_mean": float(np.mean(normalized)),
                 "normalized_cv": float(np.std(normalized, ddof=1) / np.mean(normalized)),
+                "theta_runs": float(runs_result.theta_hat),
+                "theta_intervals": float(intervals_result.theta_hat),
+                "theta_intervals_variant": intervals_result.estimator_variant,
                 "ks_statistic": ks_statistic,
                 "bootstrap_pvalue": bootstrap_pvalue,
                 "bootstrap_replicates": len(bootstrap_statistics),
@@ -174,6 +191,7 @@ def _return_time_diagnostic(
             "series_id": series_id,
             "plotting_probability": plotting_probability,
             "theoretical_quantile": theoretical_quantile,
+            "mixture_quantile": mixture_quantile,
             "empirical_quantile": ordered,
         }
     )
@@ -312,6 +330,12 @@ def _build_empirical_illustration(
             threshold_quantile=empirical_threshold_quantile,
             run_length=empirical_run_length,
         )
+        return_times = compute_return_times(values.to_numpy(), threshold=result.threshold)
+        theta_intervals = (
+            float(ferro_segers_intervals_estimator(return_times).theta_hat)
+            if return_times.size
+            else float("nan")
+        )
         exceedance = values > result.threshold
         panel[series_id] = values.to_numpy()
         panel[f"{series_id}_threshold"] = result.threshold
@@ -332,6 +356,7 @@ def _build_empirical_illustration(
                 "n_exceedances": int(result.n_exceedances),
                 "n_clusters": int(result.n_clusters),
                 "theta_runs": float(result.theta_hat),
+                "theta_intervals": theta_intervals,
                 "lambda_runs": float((result.n_exceedances / len(values)) / result.theta_hat),
                 "theta_runs_ci_lower": float(bootstrap_row.theta_runs_ci_lower),
                 "theta_runs_ci_upper": float(bootstrap_row.theta_runs_ci_upper),
@@ -415,6 +440,12 @@ def _build_empirical_illustration(
         threshold_quantile=empirical_threshold_quantile,
         run_length=empirical_run_length,
     )
+    transformed_return_times = compute_return_times(unrate_diff12.to_numpy(), threshold=transformed_result.threshold)
+    transformed_theta_intervals = (
+        float(ferro_segers_intervals_estimator(transformed_return_times).theta_hat)
+        if transformed_return_times.size
+        else float("nan")
+    )
     summary_rows.append(
         {
             "series_id": "unrate_diff12",
@@ -430,6 +461,7 @@ def _build_empirical_illustration(
             "n_exceedances": int(transformed_result.n_exceedances),
             "n_clusters": int(transformed_result.n_clusters),
             "theta_runs": float(transformed_result.theta_hat),
+            "theta_intervals": transformed_theta_intervals,
             "lambda_runs": float((transformed_result.n_exceedances / len(unrate_diff12)) / transformed_result.theta_hat),
             "theta_runs_ci_lower": float(transformed_row.theta_runs_ci_lower),
             "theta_runs_ci_upper": float(transformed_row.theta_runs_ci_upper),
@@ -570,6 +602,7 @@ def main() -> None:
     logistic_return_time_summary, logistic_return_time_qq = _return_time_diagnostic(
         values=observable,
         threshold_quantile=0.95,
+        run_length=4,
         series_id="logistic_observable",
         block_size=40,
         n_bootstrap=250,
@@ -578,6 +611,7 @@ def main() -> None:
     clustered_return_time_summary, clustered_return_time_qq = _return_time_diagnostic(
         values=np.abs(simulate_garch11(n_steps=3000, seed=11)),
         threshold_quantile=0.95,
+        run_length=4,
         series_id="clustered_stress",
         block_size=40,
         n_bootstrap=250,
@@ -599,7 +633,7 @@ def main() -> None:
         output_dir / "03_return_time_distribution_source.csv",
         index=False,
     )
-    plot_return_time_exponential_comparison(
+    plot_return_time_mixture_comparison(
         qq_table=return_time_qq,
         summary_table=return_time_summary,
         output_path=output_dir / "03_return_time_distribution.png",
@@ -719,6 +753,26 @@ def main() -> None:
                 estimate_runs_extremal_index(clustered_values, threshold_quantile=0.95, run_length=4).theta_hat,
                 estimate_runs_extremal_index(isolated_values, threshold_quantile=0.95, run_length=4).theta_hat,
             ],
+            "theta_intervals": [
+                ferro_segers_intervals_estimator(
+                    compute_return_times(
+                        observable,
+                        threshold=float(np.quantile(observable, 0.95)),
+                    )
+                ).theta_hat,
+                ferro_segers_intervals_estimator(
+                    compute_return_times(
+                        clustered_values,
+                        threshold=float(np.quantile(clustered_values, 0.95)),
+                    )
+                ).theta_hat,
+                ferro_segers_intervals_estimator(
+                    compute_return_times(
+                        isolated_values,
+                        threshold=float(np.quantile(isolated_values, 0.95)),
+                    )
+                ).theta_hat,
+            ],
         }
     )
     extremal_index_table.to_csv(output_dir / "04_extremal_index_by_series_source.csv", index=False)
@@ -794,6 +848,47 @@ def main() -> None:
         empirical_run_length_summary,
         empirical_coverage_summary,
     ) = _build_empirical_illustration(repo_root)
+    empirical_return_time_summaries: list[pd.DataFrame] = []
+    empirical_return_time_qq_tables: list[pd.DataFrame] = []
+    empirical_return_time_specs = [
+        ("unrate", empirical_merged["unrate"].to_numpy(), 0.90, 3, 36, 250, 211),
+        ("baa10ym", empirical_merged["baa10ym"].to_numpy(), 0.90, 3, 36, 250, 223),
+        ("kcfsi", empirical_merged["kcfsi"].to_numpy(), 0.90, 3, 36, 250, 227),
+    ]
+    for series_id, values, quantile, run_length, block_size, n_bootstrap, seed in empirical_return_time_specs:
+        summary_df, qq_df = _return_time_diagnostic(
+            values=values,
+            threshold_quantile=quantile,
+            run_length=run_length,
+            series_id=series_id,
+            block_size=block_size,
+            n_bootstrap=n_bootstrap,
+            seed=seed,
+        )
+        empirical_return_time_summaries.append(summary_df)
+        empirical_return_time_qq_tables.append(qq_df)
+
+    return_time_summary = pd.concat(
+        [return_time_summary, *empirical_return_time_summaries],
+        ignore_index=True,
+    )
+    return_time_qq = pd.concat(
+        [return_time_qq, *empirical_return_time_qq_tables],
+        ignore_index=True,
+    )
+    return_time_summary.to_csv(
+        output_dir / "03_return_time_distribution_summary.csv",
+        index=False,
+    )
+    return_time_qq.to_csv(
+        output_dir / "03_return_time_distribution_source.csv",
+        index=False,
+    )
+    plot_return_time_mixture_comparison(
+        qq_table=return_time_qq,
+        summary_table=return_time_summary,
+        output_path=output_dir / "03_return_time_distribution.png",
+    )
     empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
     empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
     empirical_threshold_summary.to_csv(output_dir / "08_real_data_threshold_sensitivity_source.csv", index=False)

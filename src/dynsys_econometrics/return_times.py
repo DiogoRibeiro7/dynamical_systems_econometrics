@@ -37,6 +37,16 @@ class ExponentialComparisonResult:
     empirical_mean: float
 
 
+@dataclass(frozen=True)
+class IntervalsExtremalIndexResult:
+    """Ferro-Segers intervals estimator and fitted mixture metadata."""
+
+    theta_hat: float
+    estimator_variant: str
+    n_intervals: int
+    max_interval: int
+
+
 def _coerce_numeric_series(values: Sequence[float] | FloatArray) -> FloatArray:
     """Validate and convert input to finite float array."""
     if isinstance(values, np.ndarray):
@@ -156,6 +166,62 @@ def empirical_survival_curve(
     tail_counts = np.flip(np.cumsum(np.flip(counts.astype(np.float64))))
     survival = tail_counts / float(n)
     return unique_times.astype(np.int64), survival.astype(np.float64)
+
+
+def ferro_segers_intervals_estimator(
+    return_times: FloatArray | IntArray | Sequence[float] | Sequence[int],
+) -> IntervalsExtremalIndexResult:
+    """Estimate the extremal index using the Ferro-Segers intervals estimator."""
+    if isinstance(return_times, np.ndarray):
+        times = np.asarray(return_times, dtype=np.float64)
+    else:
+        times = np.asarray(list(return_times), dtype=np.float64)
+
+    if times.size == 0:
+        raise ValueError("return_times must not be empty.")
+    if np.any(times < 1.0) or not np.isfinite(times).all():
+        raise ValueError("return_times must be finite positive values.")
+
+    n_intervals = int(times.size)
+    max_interval = int(np.max(times))
+    if max_interval <= 2:
+        numerator = 2.0 * float(np.sum(times)) ** 2
+        denominator = float(n_intervals) * float(np.sum(times**2))
+        raw_theta = numerator / denominator
+        variant = "moment"
+    else:
+        shifted = times - 1.0
+        numerator = 2.0 * float(np.sum(shifted)) ** 2
+        denominator = float(n_intervals) * float(np.sum(shifted * (times - 2.0)))
+        raw_theta = numerator / denominator if denominator > 0.0 else float("inf")
+        variant = "bias_corrected"
+
+    return IntervalsExtremalIndexResult(
+        theta_hat=float(min(1.0, raw_theta)),
+        estimator_variant=variant,
+        n_intervals=n_intervals,
+        max_interval=max_interval,
+    )
+
+
+def fitted_mixture_quantiles(
+    plotting_probabilities: FloatArray | Sequence[float],
+    theta_hat: float,
+) -> FloatArray:
+    """Return quantiles of the Ferro-Segers limiting mixture for normalized intervals."""
+    probs = np.asarray(plotting_probabilities, dtype=np.float64)
+    if probs.ndim != 1:
+        raise ValueError("plotting_probabilities must be one-dimensional.")
+    if np.any((probs <= 0.0) | (probs >= 1.0)):
+        raise ValueError("plotting_probabilities must lie in (0, 1).")
+    if not np.isfinite(theta_hat) or theta_hat <= 0.0 or theta_hat > 1.0:
+        raise ValueError("theta_hat must lie in (0, 1].")
+
+    atom_mass = 1.0 - theta_hat
+    quantiles = np.zeros_like(probs, dtype=np.float64)
+    positive = probs > atom_mass
+    quantiles[positive] = -np.log((1.0 - probs[positive]) / theta_hat) / theta_hat
+    return quantiles
 
 
 def exponential_benchmark_comparison(

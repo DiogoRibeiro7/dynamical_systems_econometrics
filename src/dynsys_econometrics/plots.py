@@ -237,6 +237,78 @@ def plot_return_time_exponential_comparison(
     plt.close(fig)
 
 
+def plot_return_time_mixture_comparison(
+    qq_table: pd.DataFrame,
+    summary_table: pd.DataFrame,
+    output_path: str | Path,
+) -> None:
+    """Plot normalized return-time QQ diagnostics against the fitted Ferro-Segers mixture."""
+    path = _ensure_parent_dir(output_path)
+    fig, axes = plt.subplots(1, 2, figsize=(10.8, 4.8), sharex=True, sharey=True)
+    panel_specs = [
+        ("clustered_stress", "Clustered synthetic stress", "#e45756"),
+        ("baa10ym", "Baa-Treasury spread", "#4c78a8"),
+    ]
+
+    max_quantile = 1.0
+    if not qq_table.empty:
+        max_quantile = float(
+            max(
+                qq_table["mixture_quantile"].max(),
+                qq_table["empirical_quantile"].max(),
+            )
+        )
+
+    for ax, (series_id, title, color) in zip(axes, panel_specs):
+        qq_subset = qq_table.loc[qq_table["series_id"] == series_id].copy()
+        summary_subset = summary_table.loc[summary_table["series_id"] == series_id].copy()
+        if qq_subset.empty or summary_subset.empty:
+            ax.text(0.5, 0.5, "No diagnostic available", ha="center", va="center")
+            ax.set_title(title)
+            continue
+
+        qq_subset = qq_subset.sort_values("mixture_quantile")
+        ax.scatter(
+            qq_subset["mixture_quantile"],
+            qq_subset["empirical_quantile"],
+            s=18,
+            color=color,
+            alpha=0.85,
+            edgecolors="none",
+        )
+        ax.plot([0.0, max_quantile], [0.0, max_quantile], linestyle="--", color="#444444", linewidth=1.0)
+        summary_row = summary_subset.iloc[0]
+        atom_mass = 1.0 - float(summary_row["theta_intervals"])
+        ax.axvline(0.0, color="#999999", linewidth=0.8)
+        ax.text(
+            0.04,
+            0.96,
+            "\n".join(
+                [
+                    f"runs = {summary_row['theta_runs']:.3f}",
+                    f"intervals = {summary_row['theta_intervals']:.3f}",
+                    f"atom = {atom_mass:.3f}",
+                ]
+            ),
+            transform=ax.transAxes,
+            ha="left",
+            va="top",
+            fontsize=9,
+            bbox={"boxstyle": "round,pad=0.3", "facecolor": "white", "edgecolor": "#cccccc"},
+        )
+        ax.set_title(title)
+        ax.set_xlabel("Fitted mixture quantile")
+
+    axes[0].set_ylabel(r"Empirical quantile of $\hat{p}\tau_j$")
+    for ax in axes:
+        ax.set_xlim(0.0, max_quantile * 1.02)
+        ax.set_ylim(0.0, max_quantile * 1.02)
+
+    fig.tight_layout()
+    fig.savefig(path, dpi=160)
+    plt.close(fig)
+
+
 def plot_extremal_index_by_threshold(
     quantiles: list[float],
     theta_values: list[float],
