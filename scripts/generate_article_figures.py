@@ -356,6 +356,10 @@ def _build_empirical_illustration(
                 "n_exceedances": int(result.n_exceedances),
                 "n_clusters": int(result.n_clusters),
                 "theta_runs": float(result.theta_hat),
+                "theta_tilde": float(
+                    result.theta_hat
+                    / ((1.0 - (result.n_exceedances / len(values))) ** empirical_run_length)
+                ),
                 "theta_intervals": theta_intervals,
                 "lambda_runs": float((result.n_exceedances / len(values)) / result.theta_hat),
                 "theta_runs_ci_lower": float(bootstrap_row.theta_runs_ci_lower),
@@ -382,7 +386,15 @@ def _build_empirical_illustration(
                     "threshold": float(threshold_row.threshold),
                     "n_exceedances": int(threshold_row.n_exceedances),
                     "n_clusters": int(threshold_row.n_clusters),
+                    "p_hat": float(threshold_row.n_exceedances / len(values)),
+                    "theta_indep": float(
+                        (1.0 - (threshold_row.n_exceedances / len(values))) ** empirical_run_length
+                    ),
                     "theta_runs": float(threshold_row.theta_runs),
+                    "theta_tilde": float(
+                        threshold_row.theta_runs
+                        / ((1.0 - (threshold_row.n_exceedances / len(values))) ** empirical_run_length)
+                    ),
                     "theta_runs_ci_lower": float(threshold_row.theta_runs_ci_lower),
                     "theta_runs_ci_upper": float(threshold_row.theta_runs_ci_upper),
                     "lambda_runs": float(threshold_row.lambda_runs),
@@ -414,7 +426,15 @@ def _build_empirical_illustration(
                     "threshold": float(run_length_row.threshold),
                     "n_exceedances": int(run_length_row.n_exceedances),
                     "n_clusters": int(run_length_row.n_clusters),
+                    "p_hat": float(run_length_row.n_exceedances / len(values)),
+                    "theta_indep": float(
+                        (1.0 - (run_length_row.n_exceedances / len(values))) ** run_length_row.run_length
+                    ),
                     "theta_runs": float(run_length_row.theta_runs),
+                    "theta_tilde": float(
+                        run_length_row.theta_runs
+                        / ((1.0 - (run_length_row.n_exceedances / len(values))) ** run_length_row.run_length)
+                    ),
                     "lambda_runs": float(run_length_row.lambda_runs),
                     "lambda_runs_ci_lower": float(run_length_row.lambda_runs_ci_lower),
                     "lambda_runs_ci_upper": float(run_length_row.lambda_runs_ci_upper),
@@ -461,6 +481,10 @@ def _build_empirical_illustration(
             "n_exceedances": int(transformed_result.n_exceedances),
             "n_clusters": int(transformed_result.n_clusters),
             "theta_runs": float(transformed_result.theta_hat),
+            "theta_tilde": float(
+                transformed_result.theta_hat
+                / ((1.0 - (transformed_result.n_exceedances / len(unrate_diff12))) ** empirical_run_length)
+            ),
             "theta_intervals": transformed_theta_intervals,
             "lambda_runs": float((transformed_result.n_exceedances / len(unrate_diff12)) / transformed_result.theta_hat),
             "theta_runs_ci_lower": float(transformed_row.theta_runs_ci_lower),
@@ -665,6 +689,10 @@ def main() -> None:
                 for row in bootstrap_sensitivity
             ],
             "theta_runs": [row.theta_runs for row in bootstrap_sensitivity],
+            "theta_tilde": [
+                row.theta_runs / ((1.0 - (row.n_exceedances / observable.size)) ** 4)
+                for row in bootstrap_sensitivity
+            ],
             "theta_cluster_mean": [row.theta_cluster_mean for row in bootstrap_sensitivity],
             "lambda_indep": [
                 (row.n_exceedances / observable.size)
@@ -720,7 +748,15 @@ def main() -> None:
             "n_exceedances": [row.n_exceedances for row in run_length_sensitivity],
             "n_clusters": [row.n_clusters for row in run_length_sensitivity],
             "p_hat": [row.n_exceedances / observable.size for row in run_length_sensitivity],
+            "theta_indep": [
+                (1.0 - (row.n_exceedances / observable.size)) ** row.run_length
+                for row in run_length_sensitivity
+            ],
             "theta_runs": [row.theta_runs for row in run_length_sensitivity],
+            "theta_tilde": [
+                row.theta_runs / ((1.0 - (row.n_exceedances / observable.size)) ** row.run_length)
+                for row in run_length_sensitivity
+            ],
             "lambda_indep": [
                 (row.n_exceedances / observable.size)
                 / ((1.0 - (row.n_exceedances / observable.size)) ** row.run_length)
