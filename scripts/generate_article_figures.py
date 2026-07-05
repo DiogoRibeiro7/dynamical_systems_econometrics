@@ -86,6 +86,12 @@ def _build_stress_heatmap_frame() -> pd.DataFrame:
 
 def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.DataFrame]:
     """Build a small empirical macro-financial panel from cleaned FRED CSV files."""
+    empirical_threshold_quantile = 0.90
+    empirical_run_length = 3
+    empirical_n_bootstrap = 250
+    empirical_block_size = 36
+    empirical_seed = 97
+    empirical_ci_level = 0.90
     series_specs = [
         ("unrate", repo_root / "data" / "processed" / "fred_unrate_clean.csv", "UNRATE"),
         ("baa10ym", repo_root / "data" / "processed" / "fred_baa10ym_clean.csv", "BAA10YM"),
@@ -113,9 +119,19 @@ def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.Dat
         values = common[series_id]
         result = estimate_runs_extremal_index(
             values.to_numpy(),
-            threshold_quantile=0.90,
-            run_length=3,
+            threshold_quantile=empirical_threshold_quantile,
+            run_length=empirical_run_length,
         )
+        bootstrap_result = bootstrap_threshold_sensitivity_analysis(
+            values.to_numpy(),
+            threshold_quantiles=[empirical_threshold_quantile],
+            run_length=empirical_run_length,
+            n_bootstrap=empirical_n_bootstrap,
+            block_size=empirical_block_size,
+            seed=empirical_seed,
+            ci_level=empirical_ci_level,
+        )
+        bootstrap_row = bootstrap_result[0]
         exceedance = values > result.threshold
         panel[series_id] = values.to_numpy()
         panel[f"{series_id}_threshold"] = result.threshold
@@ -127,13 +143,20 @@ def _build_empirical_illustration(repo_root: Path) -> tuple[pd.DataFrame, pd.Dat
                 "sample_start": str(common.index.min().date()),
                 "sample_end": str(common.index.max().date()),
                 "n_observations": int(len(values)),
-                "threshold_quantile": 0.90,
-                "run_length": 3,
+                "threshold_quantile": empirical_threshold_quantile,
+                "run_length": empirical_run_length,
                 "threshold": float(result.threshold),
                 "n_exceedances": int(result.n_exceedances),
                 "n_clusters": int(result.n_clusters),
                 "theta_runs": float(result.theta_hat),
                 "lambda_runs": float((result.n_exceedances / len(values)) / result.theta_hat),
+                "theta_runs_ci_lower": float(bootstrap_row.theta_runs_ci_lower),
+                "theta_runs_ci_upper": float(bootstrap_row.theta_runs_ci_upper),
+                "lambda_runs_ci_lower": float(bootstrap_row.lambda_runs_ci_lower),
+                "lambda_runs_ci_upper": float(bootstrap_row.lambda_runs_ci_upper),
+                "n_bootstrap": empirical_n_bootstrap,
+                "block_size": empirical_block_size,
+                "ci_level": empirical_ci_level,
             }
         )
 
