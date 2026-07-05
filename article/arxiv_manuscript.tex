@@ -212,17 +212,19 @@ Its sample analogue is
 \]
 whenever $\widehat{\theta}_n^{(r)}>0$.
 
-The interpretation is straightforward but worth stating carefully. The exceedance rate $\widehat{p}_n$ records how often the process enters the stress region, while the clustering coefficient $\widehat{\theta}_n^{(r)}$ records how isolated those exceedances are once they occur. Dividing the first quantity by the second therefore rescales incidence by the inverse isolation probability and increases the measured stress load when exceedances arrive in tighter temporal groups. Because $\theta_n^{(r)} \le 1$, the functional always satisfies $\Lambda_n(u_n,r)\ge p(u_n)$. At a finite threshold, however, the honest zero-clustering reference is not $p(u_n)$ itself but the independence benchmark
+The interpretation is straightforward but worth stating carefully. Under runs declustering, $1/\theta_n^{(r)}$ is the mean number of exceedances per cluster, so $\Lambda_n(u_n,r)$ equals exceedance probability multiplied by mean cluster size. Its sample analogue therefore measures expected exceedance load per period after adjusting for temporal concentration. This object is not a probability, and it can exceed one. The unemployment illustration below does exactly that, because the functional records cluster-weighted exceedance intensity rather than a frequency constrained to the unit interval. The exceedance rate $\widehat{p}_n$ records how often the process enters the stress region, while the clustering coefficient $\widehat{\theta}_n^{(r)}$ records how isolated those exceedances are once they occur. Dividing the first quantity by the isolation probability therefore rescales incidence by mean cluster size and increases the measured stress load when exceedances arrive in tighter temporal groups. Because $\theta_n^{(r)} \le 1$, the functional always satisfies $\Lambda_n(u_n,r)\ge p(u_n)$. At a finite threshold, however, the honest zero-clustering reference is not $p(u_n)$ itself but the independence benchmark
 \[
 \Lambda_{\mathrm{indep}}(u_n,r)=\frac{p(u_n)}{(1-p(u_n))^r},
 \]
-which exceeds $p(u_n)$ whenever $p(u_n)>0$. In that sense, $\Lambda$ may be read as a cluster-adjusted stress load: identical event frequencies need not imply identical stress severity if one process concentrates those events into more persistent bursts.
+which exceeds $p(u_n)$ whenever $p(u_n)>0$. This benchmark is the correct finite-threshold no-clustering reference for $\Lambda$, not a secondary comparison. In that sense, $\Lambda$ may be read as a cluster-adjusted stress load: identical event frequencies need not imply identical stress severity if one process concentrates those events into more persistent bursts.
+
+The functional is also non-injective in a way that matters empirically. A rare but strongly clustered regime and a more frequent but weakly clustered regime can generate the same value of $\Lambda$. For that reason, $\Lambda$ should never be reported in isolation. The pair $(\widehat{p}_n,\widehat{\theta}_n^{(r)})$ must accompany it whenever substantive interpretation is attempted.
 
 The simplicity of the definition is intentional. The aim is not to compete with the richer theory of tail processes or extremal dependence structures, but to produce a scalar summary that remains mathematically interpretable while being usable inside an applied stress workflow.
 
 \subsection{Basic properties}
 
-\begin{proposition}[Monotone ordering by clustering]
+\begin{lemma}[Elementary properties of the cluster-adjusted stress functional]
 Fix a threshold $u$ and run length $r$. Consider two stationary processes $A$ and $B$ such that
 \[
 p_A(u)=p_B(u)=p(u)>0,
@@ -233,12 +235,6 @@ Then
 \[
 \Lambda_A(u,r)>\Lambda_B(u,r).
 \]
-\end{proposition}
-
-\textit{Proof sketch.}
-The conclusion follows immediately from the definition $\Lambda(u,r)=p(u)/\theta^{(r)}(u)$ and positivity of $p(u)$. For equal exceedance probability, the process with smaller clustering coefficient has the larger cluster-adjusted stress load. The content of the proposition is interpretive rather than algebraically deep: equal event frequency should not imply equal stress severity when one process exhibits stronger local bunching of extremes.
-
-\begin{proposition}[Independent benchmark]
 If exceedances are temporally independent at threshold $u$, then for every $r\ge 1$,
 \[
 \theta^{(r)}(u)=(1-p(u))^r
@@ -251,16 +247,30 @@ If $\{u_n\}$ is a high-threshold sequence with $p(u_n)\to 0$, then
 \qquad\text{and}\qquad
 \frac{\Lambda_{\mathrm{indep}}(u_n,r)}{p(u_n)}\to 1.
 \]
-\end{proposition}
+Finally, if $u_n$ is fixed and $1 \le r_1 < r_2$, then
+\[
+\theta_n^{(r_2)} \le \theta_n^{(r_1)}
+\qquad\text{and}\qquad
+\Lambda_n(u_n,r_2) \ge \Lambda_n(u_n,r_1).
+\]
+\end{lemma}
 
 \textit{Proof sketch.}
-Under independence,
+The first claim follows immediately from the definition $\Lambda(u,r)=p(u)/\theta^{(r)}(u)$ and positivity of $p(u)$. Under independence,
 \[
 \mathbb{P}\!\left(X_{-1}\le u,\dots,X_{-r}\le u \mid X_0>u\right)
 =\prod_{j=1}^{r}\mathbb{P}(X_{-j}\le u)
 =(1-p(u))^r,
 \]
-so the finite-level clustering coefficient is the probability that the preceding $r$ observations remain below threshold under temporal independence. Substituting this value into the definition of $\Lambda$ gives the finite-level independence benchmark. The asymptotic statement follows because $p(u_n)\to 0$ implies $(1-p(u_n))^r\to 1$. This proposition supplies the correct benchmark: at finite thresholds, zero clustering does not remove the adjustment completely; it anchors it at $\Lambda_{\mathrm{indep}}(u,r)$.
+so the finite-level clustering coefficient is the probability that the preceding $r$ observations remain below threshold under temporal independence. Substituting this value into the definition of $\Lambda$ gives the finite-level independence benchmark, and the asymptotic statement follows because $p(u_n)\to 0$ implies $(1-p(u_n))^r\to 1$. If $r_2>r_1$, then the event
+\[
+\{X_{-1}\le u_n,\dots,X_{-r_2}\le u_n\}
+\]
+is a subset of
+\[
+\{X_{-1}\le u_n,\dots,X_{-r_1}\le u_n\},
+\]
+so the monotonicity statement follows from conditional-probability ordering and the fixed numerator $p(u_n)$.
 
 \begin{lemma}[Relative plug-in consistency under imported ingredients]
 Assume:
@@ -288,33 +298,6 @@ Write
 \frac{\theta_n^{(r)}}{\widehat{\theta}_n^{(r)}}.
 \]
 The first factor converges to one by assumption. The second does as well because $\widehat{\theta}_n^{(r)}/\theta_n^{(r)}\xrightarrow{p}1$ and the reciprocal map is continuous on $(0,\infty)$. The continuous mapping theorem therefore yields the relative consistency claim. The purpose of the lemma is bookkeeping rather than originality: it does not prove consistency of the runs estimator. That ingredient is imported from the extremal-index literature under mixing and intermediate-threshold conditions; see, for example, \cite{ferro2003,suveges2007}.
-
-\begin{proposition}[Run-length monotonicity]
-Fix a threshold $u_n$ and two run lengths $1 \le r_1 < r_2$. Then
-\[
-\theta_n^{(r_2)} \le \theta_n^{(r_1)}.
-\]
-Consequently, whenever both quantities are positive,
-\[
-\Lambda(u_n,r_2) \ge \Lambda(u_n,r_1).
-\]
-\end{proposition}
-
-\textit{Proof sketch.}
-By definition,
-\[
-\theta_n^{(r)}=
-\mathbb{P}\!\left(X_{-1}\le u_n,\dots,X_{-r}\le u_n \mid X_0>u_n\right).
-\]
-If $r_2>r_1$, then the event
-\[
-\{X_{-1}\le u_n,\dots,X_{-r_2}\le u_n\}
-\]
-is a subset of
-\[
-\{X_{-1}\le u_n,\dots,X_{-r_1}\le u_n\}.
-\]
-Conditional probabilities therefore satisfy $\theta_n^{(r_2)} \le \theta_n^{(r_1)}$. Since $\Lambda_n(u_n,r)=p(u_n)/\theta_n^{(r)}$ with fixed numerator, the second claim follows. The interpretation is immediate: increasing the run length makes the clustering rule stricter, which can only weakly increase the cluster-adjusted stress load.
 
 \begin{proposition}[Finite-sample perturbation bound]
 Let $p>0$ and $\theta>0$, and let $\widetilde{p}$ and $\widetilde{\theta}$ be estimators such that

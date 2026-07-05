@@ -114,26 +114,21 @@ $$
 
 Interpretation:
 
-The exceedance rate measures how often the process enters the stress region, whereas the clustering coefficient measures how isolated those exceedances are once they occur. Dividing the first object by the second therefore rescales incidence by the inverse isolation probability and raises the stress load when extreme events arrive in tighter temporal groups. At a finite threshold, the honest zero-clustering reference is not `p(u)` itself but the independence benchmark `Lambda_indep(u, r) = p(u)/(1-p(u))^r`. The purpose of the functional is not to replace richer theories of tail dependence, but to convert clustering information into a scalar summary that can be compared alongside incidence and volatility measures.
+Under runs declustering, `1/theta` is mean cluster size, so `Lambda = p/theta` is exceedance probability multiplied by mean exceedances per cluster. That makes `Lambda` an exceedance-load functional rather than a probability, which is why it can exceed `1` in a level-unemployment example without any contradiction. At a finite threshold, the honest zero-clustering reference is not `p(u)` itself but the independence benchmark `Lambda_indep(u, r) = p(u)/(1-p(u))^r`. The object is also non-injective: the same `Lambda` can come from a rare-and-clustered regime or a frequent-and-scattered regime, so the pair `(p, theta)` must always be reported alongside it. The purpose of the functional is not to replace richer theories of tail dependence, but to convert clustering information into a scalar summary that can be compared alongside incidence and volatility measures.
 
 ### Proposition set
 
-1. **Monotone ordering by clustering**
-   - for equal exceedance probability, a process with smaller clustering coefficient has larger cluster-adjusted stress.
+1. **Elementary properties lemma**
+   - for equal exceedance probability, a process with smaller clustering coefficient has larger cluster-adjusted stress
+   - under temporal independence, $\theta^{(r)}(u)=(1-p(u))^r$ and $\Lambda_{\mathrm{indep}}(u,r)=p(u)/(1-p(u))^r$
+   - along a high-threshold sequence with $p(u_n)\to 0$, this benchmark converges to the simpler asymptotic reference because $\theta_n^{(r)}\to 1$
+   - if $r_2>r_1$, then $\theta_n^{(r_2)}\le \theta_n^{(r_1)}$ and therefore $\Lambda(u_n,r_2)\ge \Lambda(u_n,r_1)$
 
-2. **Independent benchmark**
-   - if exceedances are temporally independent, then $\theta^{(r)}(u)=(1-p(u))^r$ and $\Lambda_{\mathrm{indep}}(u,r)=p(u)/(1-p(u))^r$.
-   - along a high-threshold sequence with $p(u_n)\to 0$, this benchmark converges to the simpler asymptotic reference because $\theta_n^{(r)}\to 1$.
-
-3. **Relative plug-in consistency**
+2. **Relative plug-in consistency**
    - under intermediate thresholds, if the exceedance-rate and finite-level clustering estimators are relatively consistent and the denominator stays away from zero, then $\widehat{\Lambda}_n/\Lambda_n \to_p 1$.
    - this is a continuous-mapping corollary once the ingredient consistency results are imported from the literature rather than proved in the paper.
 
-4. **Run-length monotonicity**
-   - if $r_2>r_1$, then $\theta_n^{(r_2)}\le \theta_n^{(r_1)}$ and therefore $\Lambda(u_n,r_2)\ge \Lambda(u_n,r_1)$.
-   - this formalizes why stricter declustering rules mechanically raise the cluster-adjusted stress load.
-
-5. **Finite-sample perturbation bound**
+3. **Finite-sample perturbation bound**
    - if $|\widetilde{p}-p|\le \varepsilon_p$ and $|\widetilde{\theta}-\theta|\le \varepsilon_\theta<\theta$, then
 
 $$
