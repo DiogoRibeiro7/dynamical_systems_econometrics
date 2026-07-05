@@ -427,11 +427,11 @@ The proper conclusion is therefore one of complementarity rather than rivalry. V
 
 \subsection{A small empirical macro-financial panel}
 
-The paper now includes a genuine, if still modest, empirical illustration built from three publicly available monthly FRED series rather than from a toy bundled example. The panel consists of the civilian unemployment rate, the Moody's Baa minus 10-year Treasury spread, and the Kansas City Financial Stress Index. After aligning the cleaned local CSV extracts on their common support, the usable sample runs from February 1990 through May 2026 and contains $435$ monthly observations. For comparability with the synthetic diagnostics, the empirical exercise uses the same recurrence rule throughout this section: upper-tail exceedances at the $0.90$ quantile together with a runs declustering parameter of $r=3$.
+The paper now includes a genuine, if still modest, empirical illustration built from three publicly available monthly FRED series rather than from a toy bundled example. The panel consists of the civilian unemployment rate, the Moody's Baa minus 10-year Treasury spread, and the Kansas City Financial Stress Index. After aligning the cleaned local CSV extracts on their common support, the usable sample runs from February 1990 through May 2026 and contains $435$ monthly observations. For comparability with the synthetic diagnostics, the baseline empirical specification uses upper-tail exceedances at the $0.90$ quantile together with a runs declustering parameter of $r=3$.
 
-The three series display sharply different recurrence profiles even before one turns to joint activation. Unemployment stress is the most clustered by a wide margin. Its threshold is $8.2$, it produces $42$ exceedances, but those exceedances collapse into only $2$ runs clusters, yielding an estimated extremal index of $0.048$ and a cluster-adjusted stress load of $2.028$. That is exactly the pattern one would expect from a macro variable that tends to move into prolonged labor-market deterioration during deep downturns rather than generating many isolated stress spikes. By contrast, the credit spread and the financial-stress index are more recurrent across distinct episodes. The Baa spread crosses its threshold of $3.16$ in $43$ months grouped into $8$ clusters, giving $\widehat{\theta}=0.186$ and $\widehat{\Lambda}=0.531$. The financial-stress index crosses its threshold of $1.068$ in $44$ months, also with $8$ clusters, yielding $\widehat{\theta}=0.182$ and $\widehat{\Lambda}=0.556$. Those values are still far from the independence benchmark, but they are much less concentrated than the unemployment path.
+At that baseline specification, the recurrence ranking is clear. Unemployment stress is far more concentrated than the two financial indicators. Its threshold is $8.2$; it produces $42$ exceedances, but those exceedances collapse into only $2$ runs clusters, yielding an estimated extremal index of $0.048$ and a cluster-adjusted stress load of $2.028$. The Baa spread, by contrast, crosses its threshold of $3.16$ in $43$ months grouped into $8$ clusters, giving $\widehat{\theta}=0.186$ and $\widehat{\Lambda}=0.531$. KCFSI behaves similarly: its threshold is $1.068$, it yields $44$ exceedances and $8$ clusters, and the corresponding estimates are $\widehat{\theta}=0.182$ and $\widehat{\Lambda}=0.556$. The economic interpretation is direct. Labor-market stress in this sample appears in a small number of long episodes, whereas credit and financial stress recur in more distinct bursts. That contrast is precisely the sort of temporal organization that volatility or incidence counts alone would blur.
 
-The empirical panel now carries its own uncertainty summary rather than borrowing credibility from the synthetic section. Using a $250$-replication moving-block bootstrap with $36$-month blocks, the unemployment estimate remains the least stable object in the panel, which is exactly what one should expect when the estimate is driven by only two long stress clusters. Its bootstrap interval for $\theta$ is $[0.048, 0.189]$, while the corresponding interval for $\Lambda$ is $[0.450, 2.028]$. The Baa spread is materially more stable, with $\theta$ in $[0.119, 0.306]$ and $\Lambda$ in $[0.318, 0.811]$. The financial-stress index is similar, with $\theta$ in $[0.136, 0.330]$ and $\Lambda$ in $[0.300, 0.742]$. The substantive conclusion survives the uncertainty treatment: unemployment stress is estimated to be much more temporally concentrated than the other two indicators, but the finite-sample precision of that claim is visibly weaker because the denominator is being learned from very few empirical stress episodes.
+The panel also carries its own uncertainty assessment rather than borrowing credibility from the synthetic evidence. Using a $250$-replication moving-block bootstrap with $36$-month blocks, the unemployment estimate remains the least precise object in the panel, which is exactly what one should expect when clustering is inferred from only two long episodes. Its $90\%$ interval for $\theta$ is $[0.048, 0.189]$, and the corresponding interval for $\Lambda$ is $[0.450, 2.028]$. The two financial indicators are materially more stable: for the Baa spread, the bootstrap intervals are $[0.119, 0.306]$ for $\theta$ and $[0.318, 0.811]$ for $\Lambda$; for KCFSI, they are $[0.136, 0.330]$ and $[0.300, 0.742]$. The ranking therefore survives the uncertainty treatment, but not in a way that licenses false precision. The unemployment estimate is still the most severe, yet it is also the most fragile because the denominator of the cluster-adjusted functional is learned from very few empirical stress episodes.
 
 \begin{table}[H]
 \centering
@@ -450,49 +450,30 @@ KCFSI & $0.182$ & $[0.136,\,0.330]$ & $0.556$ & $[0.300,\,0.742]$ \\
 \normalsize
 \end{table}
 
-Threshold sensitivity in the empirical panel tempers, but does not overturn, that ranking. For unemployment, the estimated clustering coefficient rises from $0.048$ at the $0.90$ quantile to $0.231$ at $0.97$, while the cluster-adjusted stress load falls from $2.028$ to $0.130$. That is the signature of a series whose stress classification at lower thresholds is dominated by a few long episodes, but whose very highest realizations are less tightly packed than the broader distress regime. The credit spread and the financial-stress index behave differently: their estimated stress loads decline more smoothly as the threshold rises, from $0.531$ to $0.130$ for the Baa spread and from $0.556$ to $0.150$ for KCFSI, without the same dramatic compression from an initially tiny extremal-index estimate. The implication is that the empirical ordering is most persuasive at moderate high thresholds, whereas at very severe cutoffs the three indicators become more comparable in cluster-adjusted terms.
-
-\begin{table}[H]
-\centering
-\caption{Empirical threshold sensitivity of the cluster-adjusted stress load}
-\label{tab:empirical_threshold_sensitivity}
-\small
-\begin{tabular}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedleft\arraybackslash}p{0.12\textwidth} >{\raggedleft\arraybackslash}p{0.12\textwidth} >{\raggedleft\arraybackslash}p{0.12\textwidth} >{\raggedleft\arraybackslash}p{0.12\textwidth}}
-\toprule
-Series & $q=0.90$ & $q=0.93$ & $q=0.95$ & $q=0.97$ \\
-\midrule
-Unemployment rate & $2.028$ & $0.838$ & $0.415$ & $0.130$ \\
-Baa-Treasury spread & $0.531$ & $0.242$ & $0.169$ & $0.130$ \\
-KCFSI & $0.556$ & $0.276$ & $0.223$ & $0.150$ \\
-\bottomrule
-\end{tabular}
-\normalsize
-\end{table}
-
-Run-length sensitivity identifies a different distinction. At the fixed $0.90$ threshold, the unemployment series is effectively unchanged as the declustering window expands, because its two stress episodes are already separated by long calm intervals. Its cluster-adjusted stress load remains $2.028$ from $r=1$ through $r=8$. The credit spread and the financial-stress index are more sensitive. For the Baa spread, $\widehat{\Lambda}$ rises from $0.425$ at $r=1$ to $0.472$ at $r=2$, then to $0.607$ for $r=4$, $6$, and $8$. KCFSI exhibits an even clearer monotone increase, moving from $0.371$ at $r=1$ to $0.556$, $0.636$, and $0.742$ as the run length reaches $2$, $4$, and then $6$ or $8$. This is exactly the comparative static implied by the theory: once the analyst demands longer quiet spells before declaring a new stress episode, recurrent financial turbulence is absorbed into fewer, larger clusters, whereas the labor-market series is already clustered at horizons far beyond the declustering window.
-
-\begin{table}[H]
-\centering
-\caption{Empirical run-length sensitivity of the cluster-adjusted stress load}
-\label{tab:empirical_run_length_sensitivity}
-\small
-\begin{tabular}{>{\raggedright\arraybackslash}p{0.24\textwidth} >{\raggedleft\arraybackslash}p{0.10\textwidth} >{\raggedleft\arraybackslash}p{0.10\textwidth} >{\raggedleft\arraybackslash}p{0.10\textwidth} >{\raggedleft\arraybackslash}p{0.10\textwidth} >{\raggedleft\arraybackslash}p{0.10\textwidth}}
-\toprule
-Series & $r=1$ & $r=2$ & $r=4$ & $r=6$ & $r=8$ \\
-\midrule
-Unemployment rate & $2.028$ & $2.028$ & $2.028$ & $2.028$ & $2.028$ \\
-Baa-Treasury spread & $0.425$ & $0.472$ & $0.607$ & $0.607$ & $0.607$ \\
-KCFSI & $0.371$ & $0.556$ & $0.636$ & $0.742$ & $0.742$ \\
-\bottomrule
-\end{tabular}
-\normalsize
-\end{table}
-
 \figasset{figures/07_real_data_lambda_robustness.png}{Empirical robustness of the cluster-adjusted stress load. The left panel shows that unemployment stress compresses sharply as the threshold rises, while the financial indicators decline more smoothly; the right panel shows that unemployment is essentially invariant to the declustering rule, whereas credit and financial stress become more clustered as the run length increases.}
+
+The robustness figure makes the comparative logic more efficiently than a stack of separate tables. Along the threshold dimension, unemployment is the most sensitive series: its estimated stress load falls from $2.028$ at $q=0.90$ to $0.838$, $0.415$, and $0.130$ at $q=0.93$, $0.95$, and $0.97$, respectively. That compression indicates that the broader upper-tail unemployment regime is dominated by a few long episodes, whereas the very highest realizations are less tightly packed. The Baa spread and KCFSI decline more smoothly, moving from $0.531$ to $0.130$ and from $0.556$ to $0.150$ over the same threshold grid. Along the run-length dimension, the picture reverses. Unemployment is essentially invariant because its two stress episodes are already separated by long calm intervals, while the two financial indicators become progressively more clustered as the episode definition widens. For the Baa spread, $\widehat{\Lambda}$ rises from $0.425$ at $r=1$ to $0.607$ by $r=4$; for KCFSI it rises from $0.371$ at $r=1$ to $0.742$ by $r=6$. The threshold path therefore tells us that unemployment dominates mainly at moderate high thresholds, while the run-length path shows that credit and financial stress are the more declustering-sensitive objects.
+
+\begin{table}[H]
+\centering
+\caption{Compact empirical robustness summary for the cluster-adjusted stress load}
+\label{tab:empirical_robustness_summary}
+\small
+\begin{tabular}{>{\raggedright\arraybackslash}p{0.22\textwidth} >{\raggedright\arraybackslash}p{0.31\textwidth} >{\raggedright\arraybackslash}p{0.31\textwidth}}
+\toprule
+Series & Threshold path $\widehat{\Lambda}(q,3)$ & Run-length path $\widehat{\Lambda}(0.90,r)$ \\
+\midrule
+Unemployment rate & $2.028 \rightarrow 0.838 \rightarrow 0.415 \rightarrow 0.130$ & $2.028 \rightarrow 2.028 \rightarrow 2.028 \rightarrow 2.028 \rightarrow 2.028$ \\
+Baa-Treasury spread & $0.531 \rightarrow 0.242 \rightarrow 0.169 \rightarrow 0.130$ & $0.425 \rightarrow 0.472 \rightarrow 0.607 \rightarrow 0.607 \rightarrow 0.607$ \\
+KCFSI & $0.556 \rightarrow 0.276 \rightarrow 0.223 \rightarrow 0.150$ & $0.371 \rightarrow 0.556 \rightarrow 0.636 \rightarrow 0.742 \rightarrow 0.742$ \\
+\bottomrule
+\end{tabular}
+\normalsize
+\end{table}
 
 Joint activation sharpens the historical interpretation. Defining a joint stress month as one in which at least two of the three indicators exceed their respective thresholds, the panel contains $29$ such months and an average stress score of $0.099$, with all three indicators active simultaneously at the peak. The dominant cluster runs from August 2008 through August 2009, which is precisely the kind of prolonged, multi-margin stress episode the recurrence framework is meant to distinguish from short-lived turbulence. Smaller joint clusters appear around the 2001 recession, the 2011 euro-area stress period, and the initial pandemic shock in March through May 2020. The empirical point is not that these dates are surprising; it is that the framework measures them in a way that keeps incidence, clustering, and joint activation analytically separate.
 
-This remains a restrained empirical section rather than a full application. The thresholds are deliberately simple, no structural identification is attempted, and the evidence should not be read as a claim about optimal early-warning design. Even so, the illustration is qualitatively different from the earlier toy example because it shows that the recurrence diagnostics survive contact with an interpretable macro-financial panel. The figure generated by the repository makes the comparison visible: unemployment stress arrives in a small number of long blocks, while credit and financial stress recur across more distinct episodes, and the joint stress score rises most persistently during the global financial crisis.
+This remains a restrained empirical section rather than a full application. The thresholds are deliberately simple, no structural identification is attempted, and the evidence should not be read as a claim about optimal early-warning design. Even so, the illustration is now doing the right kind of work for a methods paper. It shows that recurrence diagnostics survive contact with an interpretable macro-financial panel, that the substantive ranking is not purely an artifact of one threshold or one declustering rule, and that the main empirical distinction is between long labor-market stress blocks and more episodic, design-sensitive financial turbulence.
 
 \figasset{figures/07_real_data_stress_illustration.png}{Empirical macro-financial illustration from the monthly FRED panel. The unemployment rate exhibits highly concentrated upper-tail stress, while the credit spread and the financial-stress index recur across more separate episodes; the joint stress score peaks during the 2008--2009 crisis cluster.}
 
