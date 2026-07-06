@@ -66,7 +66,7 @@ ORCID: \href{https://orcid.org/0009-0001-2022-7072}{0009-0001-2022-7072}}
 \maketitle
 
 \begin{abstract}
-Standard stress diagnostics in applied econometrics usually measure magnitude, tail loss, or event frequency, but not the temporal organization of extreme episodes. That omission matters whenever interpretation depends on whether extremes arrive as isolated shocks or as clustered stress. This paper develops a reproducible recurrence-oriented framework for stress diagnostics and introduces a cluster-adjusted stress functional that combines exceedance probability with a finite-threshold clustering coefficient. Its contribution is deliberately bounded: a formal probabilistic setup, explicit estimators for exceedance incidence, return-time behavior, runs-based clustering, and multivariate stress activation, together with basic ordering and plug-in consistency results for the proposed functional under standard high-threshold regularity conditions. The asymptotic extremal-index literature enters as motivation and calibration, not as an object re-derived here. The synthetic evidence shows that recurrence diagnostics distinguish benchmark processes that volatility summaries alone would describe incompletely. In the current artifact set, the estimated finite-level clustering coefficients for two stress benchmarks are $0.673$ and $0.780$, the logistic benchmark observable has normalized return-time coefficient of variation $0.795$, the clustered synthetic benchmark has normalized return-time coefficient of variation $1.286$, and rolling volatility is elevated during exceedance periods without exhausting the clustering information. The paper does not propose new asymptotic theory for extremal-index estimation and does not claim structural macroeconomic identification. Its contribution is a mathematically careful, computationally reproducible bridge between extreme-value diagnostics and econometric stress analysis.
+Standard stress diagnostics in applied econometrics usually measure magnitude, tail loss, or event frequency, but not the temporal organization of extreme episodes. That omission matters whenever interpretation depends on whether extremes arrive as isolated shocks or as clustered stress. This paper develops a reproducible recurrence-oriented framework for stress diagnostics and introduces a cluster-adjusted stress functional that combines exceedance probability with a finite-threshold clustering coefficient. Its contribution is deliberately bounded: a formal probabilistic setup, explicit estimators for exceedance incidence, return-time behavior, runs-based clustering, and multivariate stress activation, together with basic ordering and plug-in consistency results for the proposed functional under standard high-threshold regularity conditions. The asymptotic extremal-index literature enters as motivation and calibration, not as an object re-derived here. The synthetic evidence shows that recurrence diagnostics distinguish benchmark processes that volatility summaries alone would describe incompletely, but the reported rankings are always conditional on declared thresholding and declustering choices. In the current artifact set, the estimated finite-level clustering coefficients for two stress benchmarks are $0.673$ and $0.780$, the logistic benchmark observable has normalized return-time coefficient of variation $0.795$, the clustered synthetic benchmark has normalized return-time coefficient of variation $1.286$, and rolling volatility is elevated during exceedance periods without exhausting the clustering information. The paper does not propose new asymptotic theory for extremal-index estimation and does not claim structural macroeconomic identification. Its contribution is a mathematically careful, computationally reproducible bridge between extreme-value diagnostics and econometric stress analysis.
 \end{abstract}
 
 \keywords{extreme values, extremal index, recurrence, return times, stress testing, time series econometrics}
@@ -293,6 +293,8 @@ is a subset of
 \]
 so the monotonicity statement follows from conditional-probability ordering and the fixed numerator $p(u_n)$.
 
+This lemma is modest in intent. It collects the algebraic consequences of the definition and identifies the exact finite-threshold independence benchmark, but it does not claim a deeper structural theorem about clustered extremes.
+
 \begin{lemma}[Relative plug-in consistency under imported ingredients]
 Assume:
 \begin{enumerate}[label=(A\arabic*),leftmargin=1.6em]
@@ -319,6 +321,8 @@ Write
 \frac{\theta_n^{(r)}}{\widehat{\theta}_n^{(r)}}.
 \]
 The first factor converges to one by assumption. The second does as well because $\widehat{\theta}_n^{(r)}/\theta_n^{(r)}\xrightarrow{p}1$ and the reciprocal map is continuous on $(0,\infty)$. The continuous mapping theorem therefore yields the relative consistency claim. The purpose of the lemma is bookkeeping rather than originality: it does not prove consistency of the runs estimator. That ingredient is imported from the extremal-index literature under mixing and intermediate-threshold conditions; see, for example, \cite{ferro2003,suveges2007}.
+
+Taken together, the results in this subsection make a limited theoretical point. The first lemma records basic finite-threshold ordering and benchmark properties, and the second transfers consistency from established ingredients to the proposed functional. Their role is to keep the object mathematically legible, not to suggest that the paper resolves the harder theory of extremal-index estimation.
 
 \begin{proposition}[Finite-sample perturbation bound]
 Let $p>0$ and $\theta>0$, and let $\widetilde{p}$ and $\widetilde{\theta}$ be estimators such that
@@ -350,6 +354,8 @@ Taking absolute values and using $\widetilde{\theta}\ge \theta-\varepsilon_\thet
 \frac{\theta\varepsilon_p+p\varepsilon_\theta}{\theta(\theta-\varepsilon_\theta)},
 \]
 which is the stated bound after separating terms. The interpretation is important: estimation error in the clustering term is amplified when $\theta$ is small, so cluster-adjusted stress is most numerically delicate precisely in the regimes where clustering is strongest.
+
+This proposition is a deterministic sensitivity calculation, not a confidence statement or asymptotic approximation. Its value is to show where numerical fragility enters once a ratio functional is built from estimated tail incidence and estimated clustering.
 
 \begin{remark}
 The functional $\Lambda(u_n,r)$ is best understood as a ranking and summary device, not as a welfare object or a structural sufficient statistic. Its value lies in comparative stress characterization.
@@ -552,7 +558,7 @@ These constraints should not be treated as apologetic caveats appended after the
 
 The central argument of the paper is that stress analysis must distinguish tail magnitude from tail organization. Econometric and risk-measure literatures have developed powerful tools for the first object, but the second requires a more explicit treatment of recurrence, clustering, and return-time behavior than stress analysis usually receives. The framework developed here is meant to provide that treatment in a form that is mathematically legible and computationally reproducible.
 
-Its contribution is best described plainly. The paper does not propose a new general theory of dependent extremes, nor does it resolve the empirical difficulties that arise when recurrence diagnostics are taken to real macro-financial data. What it does show is that recurrence can be formalized as a stress object, estimated through transparent pipeline components, summarized by an interpretable finite-threshold functional, and read alongside baseline volatility diagnostics without being absorbed by them. The synthetic evidence, together with the small empirical illustration, supports that claim. The value of the paper lies in stating it precisely enough that later empirical or theoretical work can either build on it or reject it on clear grounds.
+Its contribution is best described plainly. The paper does not propose a new general theory of dependent extremes, nor does it resolve the empirical difficulties that arise when recurrence diagnostics are taken to real macro-financial data. What it does show is that recurrence can be formalized as a stress object, estimated through transparent pipeline components, summarized by an interpretable finite-threshold functional, and read alongside baseline volatility diagnostics without being absorbed by them. The synthetic evidence, together with the small empirical illustration, supports that claim under explicit thresholding and declustering designs rather than as a tuning-free structural ranking. The value of the paper lies in stating the claim precisely enough that later empirical or theoretical work can either build on it or reject it on clear grounds.
 
 {\raggedright
 \begin{thebibliography}{99}
