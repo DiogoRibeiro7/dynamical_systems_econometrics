@@ -174,6 +174,9 @@ def run_empirical_experiment(config: Mapping[str, Any]) -> ExperimentResult:
 
 def save_experiment_result(result: ExperimentResult, output_dir: str | Path) -> None:
     """Persist experiment tables, figures, and run metadata."""
+    import matplotlib.pyplot as plt
+
+    plt.switch_backend("Agg")
     output_root = ensure_directory(output_dir)
     tables_dir = ensure_directory(output_root / "tables")
     figures_dir = ensure_directory(output_root / "figures")

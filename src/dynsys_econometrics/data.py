@@ -49,9 +49,9 @@ def _to_standard_schema(
 
     standardized = pd.DataFrame(
         {
-            "date": date,
-            "series_id": series_id_series.astype(str),
-            "value": value,
+            "date": date.to_numpy(),
+            "series_id": series_id_series.astype(str).to_numpy(),
+            "value": value.to_numpy(),
         }
     )
     return cast(DataFrame, standardized.sort_values(["series_id", "date"]).reset_index(drop=True))
@@ -490,6 +490,9 @@ def load_empirical_panel(spec: Mapping[str, Any], *, force_refresh: bool = False
         output_path = summary.get("output_path")
         if isinstance(output_path, str):
             return _apply_catalog_transformation(load_time_series_csv(output_path, series_col="series_id"), transformation)
+        panel = summary.get("panel")
+        if isinstance(panel, pd.DataFrame):
+            return _apply_catalog_transformation(cast(DataFrame, panel), transformation)
         raise DataLoadFailure("Catalog materialization did not return an output path.")
     loader = str(loader_config.get("loader", "timeseries_csv")).strip().lower()
     path = loader_config.get("path", loader_config.get("input_path"))
@@ -655,7 +658,11 @@ def _resolve_catalog_path_value(value: Any, *, base_dir: Path) -> Any:
     path_value = Path(value)
     if path_value.is_absolute():
         return str(path_value)
-    return str((base_dir / path_value).resolve())
+    candidate = (base_dir / path_value).resolve()
+    if candidate.exists():
+        return str(candidate)
+    workspace_candidate = Path(path_value).resolve()
+    return str(workspace_candidate)
 
 
 def _catalog_entry_to_loader_spec(entry: Mapping[str, Any], *, base_dir: Path) -> dict[str, Any]:
@@ -719,6 +726,7 @@ def materialize_catalog(
     base_dir = catalog_path.resolve().parent
     for entry in _read_catalog_series(catalog_path):
         spec = _catalog_entry_to_loader_spec(entry, base_dir=base_dir)
+        spec.pop("transformation", None)
         frame = load_empirical_panel(spec, force_refresh=force_refresh)
         frames.append(_apply_catalog_transformation(frame, cast(str | None, entry.get("transformation"))))
 
@@ -733,6 +741,7 @@ def materialize_catalog(
         "n_series": int(panel["series_id"].nunique()),
         "n_rows": int(len(panel)),
         "output_path": None if output_path is None else str(Path(output_path)),
+        "panel": panel,
         "sources": summary["sources"],
         "valid": True,
         "errors": [],
@@ -772,11 +781,11 @@ def _collect_refresh_targets(spec: Mapping[str, Any]) -> list[str]:
 
     cache_path = spec.get("cache_path")
     if isinstance(cache_path, (str, Path)):
-        targets.append(str(cache_path))
+        targets.append(str(Path(cache_path)))
 
     output_path = spec.get("output_path")
     if isinstance(output_path, (str, Path)):
-        targets.append(str(output_path))
+        targets.append(str(Path(output_path)))
 
     catalog_entries = spec.get("catalogs", spec.get("catalog_paths"))
     if isinstance(catalog_entries, list):

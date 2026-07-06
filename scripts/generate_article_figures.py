@@ -962,70 +962,76 @@ def main() -> None:
     fig.tight_layout()
     fig.savefig(output_dir / "06_econometric_vs_recurrence_diagnostics.png", dpi=160)
 
-    (
-        empirical_merged,
-        empirical_summary,
-        empirical_threshold_summary,
-        empirical_run_length_summary,
-        empirical_block_size_summary,
-        empirical_coverage_summary,
-    ) = _build_empirical_illustration(repo_root)
-    empirical_return_time_summaries: list[pd.DataFrame] = []
-    empirical_return_time_qq_tables: list[pd.DataFrame] = []
-    empirical_return_time_specs = [
-        ("unrate", empirical_merged["unrate"].to_numpy(), 0.90, 3, 36, 250, 211),
-        ("baa10ym", empirical_merged["baa10ym"].to_numpy(), 0.90, 3, 36, 250, 223),
-        ("kcfsi", empirical_merged["kcfsi"].to_numpy(), 0.90, 3, 36, 250, 227),
+    empirical_required = [
+        repo_root / "data" / "processed" / "fred_unrate_clean.csv",
+        repo_root / "data" / "processed" / "fred_baa10ym_clean.csv",
+        repo_root / "data" / "processed" / "fred_kcfsi_clean.csv",
     ]
-    for series_id, values, quantile, run_length, block_size, n_bootstrap, seed in empirical_return_time_specs:
-        summary_df, qq_df = _return_time_diagnostic(
-            values=values,
-            threshold_quantile=quantile,
-            run_length=run_length,
-            series_id=series_id,
-            block_size=block_size,
-            n_bootstrap=n_bootstrap,
-            seed=seed,
-        )
-        empirical_return_time_summaries.append(summary_df)
-        empirical_return_time_qq_tables.append(qq_df)
+    if all(path.exists() for path in empirical_required):
+        (
+            empirical_merged,
+            empirical_summary,
+            empirical_threshold_summary,
+            empirical_run_length_summary,
+            empirical_block_size_summary,
+            empirical_coverage_summary,
+        ) = _build_empirical_illustration(repo_root)
+        empirical_return_time_summaries: list[pd.DataFrame] = []
+        empirical_return_time_qq_tables: list[pd.DataFrame] = []
+        empirical_return_time_specs = [
+            ("unrate", empirical_merged["unrate"].to_numpy(), 0.90, 3, 36, 250, 211),
+            ("baa10ym", empirical_merged["baa10ym"].to_numpy(), 0.90, 3, 36, 250, 223),
+            ("kcfsi", empirical_merged["kcfsi"].to_numpy(), 0.90, 3, 36, 250, 227),
+        ]
+        for series_id, values, quantile, run_length, block_size, n_bootstrap, seed in empirical_return_time_specs:
+            summary_df, qq_df = _return_time_diagnostic(
+                values=values,
+                threshold_quantile=quantile,
+                run_length=run_length,
+                series_id=series_id,
+                block_size=block_size,
+                n_bootstrap=n_bootstrap,
+                seed=seed,
+            )
+            empirical_return_time_summaries.append(summary_df)
+            empirical_return_time_qq_tables.append(qq_df)
 
-    return_time_summary = pd.concat(
-        [return_time_summary, *empirical_return_time_summaries],
-        ignore_index=True,
-    )
-    return_time_qq = pd.concat(
-        [return_time_qq, *empirical_return_time_qq_tables],
-        ignore_index=True,
-    )
-    return_time_summary.to_csv(
-        output_dir / "03_return_time_distribution_summary.csv",
-        index=False,
-    )
-    return_time_qq.to_csv(
-        output_dir / "03_return_time_distribution_source.csv",
-        index=False,
-    )
-    plot_return_time_mixture_comparison(
-        qq_table=return_time_qq,
-        summary_table=return_time_summary,
-        output_path=output_dir / "03_return_time_distribution.png",
-    )
-    empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
-    empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
-    empirical_threshold_summary.to_csv(output_dir / "08_real_data_threshold_sensitivity_source.csv", index=False)
-    empirical_run_length_summary.to_csv(output_dir / "08_real_data_run_length_sensitivity_source.csv", index=False)
-    empirical_block_size_summary.to_csv(output_dir / "07_real_data_block_size_sensitivity_source.csv", index=False)
-    empirical_coverage_summary.to_csv(output_dir / "07_clustered_bootstrap_coverage_source.csv", index=False)
-    plot_empirical_stress_illustration(
-        panel=empirical_merged,
-        output_path=output_dir / "07_real_data_stress_illustration.png",
-    )
-    plot_empirical_lambda_robustness(
-        threshold_table=empirical_threshold_summary,
-        run_length_table=empirical_run_length_summary,
-        output_path=output_dir / "08_real_data_lambda_robustness.png",
-    )
+        return_time_summary = pd.concat(
+            [return_time_summary, *empirical_return_time_summaries],
+            ignore_index=True,
+        )
+        return_time_qq = pd.concat(
+            [return_time_qq, *empirical_return_time_qq_tables],
+            ignore_index=True,
+        )
+        return_time_summary.to_csv(
+            output_dir / "03_return_time_distribution_summary.csv",
+            index=False,
+        )
+        return_time_qq.to_csv(
+            output_dir / "03_return_time_distribution_source.csv",
+            index=False,
+        )
+        plot_return_time_mixture_comparison(
+            qq_table=return_time_qq,
+            summary_table=return_time_summary,
+            output_path=output_dir / "03_return_time_distribution.png",
+        )
+        empirical_merged.to_csv(output_dir / "07_real_data_stress_illustration_source.csv", index=False)
+        empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
+        empirical_threshold_summary.to_csv(output_dir / "08_real_data_threshold_sensitivity_source.csv", index=False)
+        empirical_run_length_summary.to_csv(output_dir / "08_real_data_run_length_sensitivity_source.csv", index=False)
+        empirical_block_size_summary.to_csv(output_dir / "07_real_data_block_size_sensitivity_source.csv", index=False)
+        empirical_coverage_summary.to_csv(output_dir / "07_clustered_bootstrap_coverage_source.csv", index=False)
+        plot_empirical_stress_illustration(
+            panel=empirical_merged,
+            output_path=output_dir / "07_real_data_stress_illustration.png",
+        )
+        plot_empirical_lambda_robustness(
+            threshold_table=empirical_threshold_summary,
+            run_length_table=empirical_run_length_summary,
+            output_path=output_dir / "08_real_data_lambda_robustness.png",
+        )
 
     summary_paths = [
         output_dir / "01_conceptual_pipeline.png",
