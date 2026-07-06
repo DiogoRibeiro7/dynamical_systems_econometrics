@@ -278,7 +278,7 @@ def _clustered_benchmark_coverage_table() -> pd.DataFrame:
 
 def _build_empirical_illustration(
     repo_root: Path,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """Build a small empirical macro-financial panel from cleaned FRED CSV files."""
     empirical_threshold_quantile = 0.90
     empirical_threshold_grid = [0.90, 0.93, 0.95, 0.97]
@@ -286,6 +286,7 @@ def _build_empirical_illustration(
     empirical_run_length_grid = [1, 2, 4, 6, 8]
     empirical_n_bootstrap = 250
     empirical_block_size = 36
+    empirical_block_size_grid = [12, 24, 36, 48]
     empirical_seed = 97
     empirical_ci_level = 0.90
     series_specs = [
@@ -312,9 +313,66 @@ def _build_empirical_illustration(
     summary_rows: list[dict[str, float | int | str]] = []
     threshold_rows: list[dict[str, float | int | str]] = []
     run_length_rows: list[dict[str, float | int | str]] = []
+    block_size_rows: list[dict[str, float | int | str]] = []
+
+    def _baseline_interval_envelope(
+        values_array: np.ndarray,
+        sample_start: str,
+        sample_end: str,
+        series_id: str,
+        transformation: str,
+    ) -> tuple[float, float, float, float]:
+        theta_lowers: list[float] = []
+        theta_uppers: list[float] = []
+        lambda_lowers: list[float] = []
+        lambda_uppers: list[float] = []
+        for block_size in empirical_block_size_grid:
+            block_result = bootstrap_threshold_sensitivity_analysis(
+                values_array,
+                threshold_quantiles=[empirical_threshold_quantile],
+                run_length=empirical_run_length,
+                n_bootstrap=empirical_n_bootstrap,
+                block_size=block_size,
+                seed=empirical_seed,
+                ci_level=empirical_ci_level,
+            )[0]
+            block_size_rows.append(
+                {
+                    "series_id": series_id,
+                    "transformation": transformation,
+                    "sample_start": sample_start,
+                    "sample_end": sample_end,
+                    "n_observations": int(values_array.size),
+                    "threshold_quantile": empirical_threshold_quantile,
+                    "run_length": empirical_run_length,
+                    "block_size": block_size,
+                    "theta_runs": float(block_result.theta_runs),
+                    "theta_runs_ci_lower": float(block_result.theta_runs_ci_lower),
+                    "theta_runs_ci_upper": float(block_result.theta_runs_ci_upper),
+                    "lambda_runs": float(block_result.lambda_runs),
+                    "lambda_runs_ci_lower": float(block_result.lambda_runs_ci_lower),
+                    "lambda_runs_ci_upper": float(block_result.lambda_runs_ci_upper),
+                    "n_bootstrap": empirical_n_bootstrap,
+                    "ci_level": empirical_ci_level,
+                }
+            )
+            if np.isfinite(block_result.theta_runs_ci_lower) and np.isfinite(block_result.theta_runs_ci_upper):
+                theta_lowers.append(float(block_result.theta_runs_ci_lower))
+                theta_uppers.append(float(block_result.theta_runs_ci_upper))
+            if np.isfinite(block_result.lambda_runs_ci_lower) and np.isfinite(block_result.lambda_runs_ci_upper):
+                lambda_lowers.append(float(block_result.lambda_runs_ci_lower))
+                lambda_uppers.append(float(block_result.lambda_runs_ci_upper))
+        return (
+            float(min(theta_lowers)) if theta_lowers else float("nan"),
+            float(max(theta_uppers)) if theta_uppers else float("nan"),
+            float(min(lambda_lowers)) if lambda_lowers else float("nan"),
+            float(max(lambda_uppers)) if lambda_uppers else float("nan"),
+        )
 
     for series_id in common.columns:
         values = common[series_id]
+        sample_start = str(common.index.min().date())
+        sample_end = str(common.index.max().date())
         bootstrap_result = bootstrap_threshold_sensitivity_analysis(
             values.to_numpy(),
             threshold_quantiles=empirical_threshold_grid,
@@ -329,6 +387,18 @@ def _build_empirical_illustration(
             values.to_numpy(),
             threshold_quantile=empirical_threshold_quantile,
             run_length=empirical_run_length,
+        )
+        (
+            theta_ci_lower,
+            theta_ci_upper,
+            lambda_ci_lower,
+            lambda_ci_upper,
+        ) = _baseline_interval_envelope(
+            values.to_numpy(),
+            sample_start=sample_start,
+            sample_end=sample_end,
+            series_id=series_id,
+            transformation="level",
         )
         return_times = compute_return_times(values.to_numpy(), threshold=result.threshold)
         theta_intervals = (
@@ -347,8 +417,8 @@ def _build_empirical_illustration(
                 "display_name": series_id,
                 "transformation": "level",
                 "descriptive_only": bool(result.n_clusters < 3),
-                "sample_start": str(common.index.min().date()),
-                "sample_end": str(common.index.max().date()),
+                "sample_start": sample_start,
+                "sample_end": sample_end,
                 "n_observations": int(len(values)),
                 "threshold_quantile": empirical_threshold_quantile,
                 "run_length": empirical_run_length,
@@ -362,15 +432,16 @@ def _build_empirical_illustration(
                 ),
                 "theta_intervals": theta_intervals,
                 "lambda_runs": float((result.n_exceedances / len(values)) / result.theta_hat),
-                "theta_runs_ci_lower": float(bootstrap_row.theta_runs_ci_lower),
-                "theta_runs_ci_upper": float(bootstrap_row.theta_runs_ci_upper),
-                "lambda_runs_ci_lower": float(bootstrap_row.lambda_runs_ci_lower),
-                "lambda_runs_ci_upper": float(bootstrap_row.lambda_runs_ci_upper),
+                "theta_runs_ci_lower": theta_ci_lower,
+                "theta_runs_ci_upper": theta_ci_upper,
+                "lambda_runs_ci_lower": lambda_ci_lower,
+                "lambda_runs_ci_upper": lambda_ci_upper,
                 "theta_interval_note": _cluster_interval_note(int(result.n_clusters)),
                 "lambda_interval_note": _cluster_interval_note(int(result.n_clusters)),
-                "interval_method": "basic bootstrap with fixed original threshold",
+                "interval_method": "basic bootstrap with fixed original threshold; envelope over block sizes {12,24,36,48}",
                 "n_bootstrap": empirical_n_bootstrap,
                 "block_size": empirical_block_size,
+                "block_size_grid": "12,24,36,48",
                 "ci_level": empirical_ci_level,
             }
         )
@@ -460,6 +531,18 @@ def _build_empirical_illustration(
         threshold_quantile=empirical_threshold_quantile,
         run_length=empirical_run_length,
     )
+    (
+        transformed_theta_ci_lower,
+        transformed_theta_ci_upper,
+        transformed_lambda_ci_lower,
+        transformed_lambda_ci_upper,
+    ) = _baseline_interval_envelope(
+        unrate_diff12.to_numpy(),
+        sample_start=str(unrate_diff12.index.min().date()),
+        sample_end=str(unrate_diff12.index.max().date()),
+        series_id="unrate_diff12",
+        transformation="12m_diff",
+    )
     transformed_return_times = compute_return_times(unrate_diff12.to_numpy(), threshold=transformed_result.threshold)
     transformed_theta_intervals = (
         float(ferro_segers_intervals_estimator(transformed_return_times).theta_hat)
@@ -487,15 +570,16 @@ def _build_empirical_illustration(
             ),
             "theta_intervals": transformed_theta_intervals,
             "lambda_runs": float((transformed_result.n_exceedances / len(unrate_diff12)) / transformed_result.theta_hat),
-            "theta_runs_ci_lower": float(transformed_row.theta_runs_ci_lower),
-            "theta_runs_ci_upper": float(transformed_row.theta_runs_ci_upper),
-            "lambda_runs_ci_lower": float(transformed_row.lambda_runs_ci_lower),
-            "lambda_runs_ci_upper": float(transformed_row.lambda_runs_ci_upper),
+            "theta_runs_ci_lower": transformed_theta_ci_lower,
+            "theta_runs_ci_upper": transformed_theta_ci_upper,
+            "lambda_runs_ci_lower": transformed_lambda_ci_lower,
+            "lambda_runs_ci_upper": transformed_lambda_ci_upper,
             "theta_interval_note": _cluster_interval_note(int(transformed_result.n_clusters)),
             "lambda_interval_note": _cluster_interval_note(int(transformed_result.n_clusters)),
-            "interval_method": "basic bootstrap with fixed original threshold",
+            "interval_method": "basic bootstrap with fixed original threshold; envelope over block sizes {12,24,36,48}",
             "n_bootstrap": empirical_n_bootstrap,
             "block_size": empirical_block_size,
+            "block_size_grid": "12,24,36,48",
             "ci_level": empirical_ci_level,
         }
     )
@@ -512,6 +596,7 @@ def _build_empirical_illustration(
         pd.DataFrame(summary_rows),
         pd.DataFrame(threshold_rows),
         pd.DataFrame(run_length_rows),
+        pd.DataFrame(block_size_rows),
         _clustered_benchmark_coverage_table(),
     )
 
@@ -882,6 +967,7 @@ def main() -> None:
         empirical_summary,
         empirical_threshold_summary,
         empirical_run_length_summary,
+        empirical_block_size_summary,
         empirical_coverage_summary,
     ) = _build_empirical_illustration(repo_root)
     empirical_return_time_summaries: list[pd.DataFrame] = []
@@ -929,6 +1015,7 @@ def main() -> None:
     empirical_summary.to_csv(output_dir / "07_real_data_stress_summary_source.csv", index=False)
     empirical_threshold_summary.to_csv(output_dir / "08_real_data_threshold_sensitivity_source.csv", index=False)
     empirical_run_length_summary.to_csv(output_dir / "08_real_data_run_length_sensitivity_source.csv", index=False)
+    empirical_block_size_summary.to_csv(output_dir / "07_real_data_block_size_sensitivity_source.csv", index=False)
     empirical_coverage_summary.to_csv(output_dir / "07_clustered_bootstrap_coverage_source.csv", index=False)
     plot_empirical_stress_illustration(
         panel=empirical_merged,

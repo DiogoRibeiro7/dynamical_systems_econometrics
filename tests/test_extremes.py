@@ -6,6 +6,7 @@ import pandas as pd
 
 from dynsys_econometrics.extremes import (
     block_maxima,
+    bootstrap_threshold_sensitivity_analysis,
     estimate_extremal_index,
     estimate_runs_extremal_index,
     extract_threshold_exceedances,
@@ -14,6 +15,7 @@ from dynsys_econometrics.extremes import (
     runs_declustering_from_indicator,
     threshold_sensitivity_analysis,
 )
+from dynsys_econometrics.simulation import simulate_garch11
 from dynsys_econometrics.return_times import compute_return_times
 
 
@@ -116,3 +118,46 @@ def test_perturbation_bound_is_additive_and_product_form_can_fail() -> None:
                         product_violation_found = True
 
     assert product_violation_found
+
+
+def test_clustered_bootstrap_coverage_harness_fixed_seed() -> None:
+    reference_values = np.abs(simulate_garch11(n_steps=20_000, seed=611))
+    reference_result = estimate_runs_extremal_index(
+        reference_values,
+        threshold_quantile=0.90,
+        run_length=3,
+    )
+    reference_lambda = (
+        (reference_result.n_exceedances / reference_values.size) / reference_result.theta_hat
+    )
+
+    theta_hits = 0
+    lambda_hits = 0
+    interpretable_theta = 0
+    interpretable_lambda = 0
+    n_replications = 8
+
+    for replication in range(n_replications):
+        sample = np.abs(simulate_garch11(n_steps=3000, seed=800 + replication))
+        summary = bootstrap_threshold_sensitivity_analysis(
+            sample,
+            threshold_quantiles=[0.90],
+            run_length=3,
+            n_bootstrap=40,
+            block_size=24,
+            seed=100 + replication,
+            ci_level=0.90,
+        )[0]
+        if np.isfinite(summary.theta_runs_ci_lower) and np.isfinite(summary.theta_runs_ci_upper):
+            interpretable_theta += 1
+            if summary.theta_runs_ci_lower <= reference_result.theta_hat <= summary.theta_runs_ci_upper:
+                theta_hits += 1
+        if np.isfinite(summary.lambda_runs_ci_lower) and np.isfinite(summary.lambda_runs_ci_upper):
+            interpretable_lambda += 1
+            if summary.lambda_runs_ci_lower <= reference_lambda <= summary.lambda_runs_ci_upper:
+                lambda_hits += 1
+
+    assert interpretable_theta == n_replications
+    assert interpretable_lambda == n_replications
+    assert theta_hits >= 5
+    assert lambda_hits >= 5
