@@ -245,7 +245,7 @@ That asymptotic picture explains why a clustering adjustment is natural: in the 
 
 \subsection{Basic properties}
 
-\begin{lemma}[Elementary properties of the cluster-adjusted stress functional]
+\begin{proposition}[Ordering under equal tail incidence]
 Fix a threshold $u$ and run length $r$. Consider two stationary processes $A$ and $B$ such that
 \[
 p_A(u)=p_B(u)=p(u)>0,
@@ -256,6 +256,12 @@ Then
 \[
 \Lambda_A(u,r)>\Lambda_B(u,r).
 \]
+\end{proposition}
+
+\textit{Proof sketch.}
+The claim follows immediately from the definition $\Lambda(u,r)=p(u)/\theta^{(r)}(u)$ and positivity of $p(u)$.
+
+\begin{proposition}[Finite-threshold independence benchmark]
 If exceedances are temporally independent at threshold $u$, then for every $r\ge 1$,
 \[
 \theta^{(r)}(u)=(1-p(u))^r
@@ -268,22 +274,28 @@ If $\{u_n\}$ is a high-threshold sequence with $p(u_n)\to 0$, then
 \qquad\text{and}\qquad
 \frac{\Lambda_{\mathrm{indep}}(u_n,r)}{p(u_n)}\to 1.
 \]
-Finally, if $u_n$ is fixed and $1 \le r_1 < r_2$, then
-\[
-\theta_n^{(r_2)} \le \theta_n^{(r_1)}
-\qquad\text{and}\qquad
-\Lambda_n(u_n,r_2) \ge \Lambda_n(u_n,r_1).
-\]
-\end{lemma}
+\end{proposition}
 
 \textit{Proof sketch.}
-The first claim follows immediately from the definition $\Lambda(u,r)=p(u)/\theta^{(r)}(u)$ and positivity of $p(u)$. Under independence,
+Under independence,
 \[
 \mathbb{P}\!\left(X_{-1}\le u,\dots,X_{-r}\le u \mid X_0>u\right)
 =\prod_{j=1}^{r}\mathbb{P}(X_{-j}\le u)
 =(1-p(u))^r,
 \]
-so the relevant finite-threshold benchmark is exactly the probability that the preceding $r$ observations remain below threshold under temporal independence. Substituting this value into the definition of $\Lambda$ gives the finite-level independence benchmark, and the asymptotic statement follows because $p(u_n)\to 0$ implies $(1-p(u_n))^r\to 1$. If $r_2>r_1$, then the event
+so the relevant finite-threshold benchmark is exactly the probability that the preceding $r$ observations remain below threshold under temporal independence. Substituting this value into the definition of $\Lambda$ gives the finite-level independence benchmark, and the asymptotic statement follows because $p(u_n)\to 0$ implies $(1-p(u_n))^r\to 1$.
+
+\begin{proposition}[Run-length monotonicity at fixed threshold]
+If $u_n$ is fixed and $1 \le r_1 < r_2$, then
+\[
+\theta_n^{(r_2)} \le \theta_n^{(r_1)}
+\qquad\text{and}\qquad
+\Lambda_n(u_n,r_2) \ge \Lambda_n(u_n,r_1).
+\]
+\end{proposition}
+
+\textit{Proof sketch.}
+If $r_2>r_1$, then the event
 \[
 \{X_{-1}\le u_n,\dots,X_{-r_2}\le u_n\}
 \]
@@ -293,7 +305,7 @@ is a subset of
 \]
 so the monotonicity statement follows from conditional-probability ordering and the fixed numerator $p(u_n)$.
 
-This lemma is modest in intent. It collects the algebraic consequences of the definition and identifies the exact finite-threshold independence benchmark, but it does not claim a deeper structural theorem about clustered extremes.
+These propositions are modest in intent. They collect the algebraic consequences of the definition and identify the exact finite-threshold independence benchmark, but they do not claim a deeper structural theorem about clustered extremes.
 
 \begin{lemma}[Relative plug-in consistency under imported ingredients]
 Assume:
@@ -322,18 +334,18 @@ Write
 \]
 The first factor converges to one by assumption. The second does as well because $\widehat{\theta}_n^{(r)}/\theta_n^{(r)}\xrightarrow{p}1$ and the reciprocal map is continuous on $(0,\infty)$. The continuous mapping theorem therefore yields the relative consistency claim. The purpose of the lemma is bookkeeping rather than originality: it does not prove consistency of the runs estimator. That ingredient is imported from the extremal-index literature under mixing and intermediate-threshold conditions; see, for example, \cite{ferro2003,suveges2007}.
 
-Taken together, the results in this subsection make a limited theoretical point. The first lemma records basic finite-threshold ordering and benchmark properties, and the second transfers consistency from established ingredients to the proposed functional. Their role is to keep the object mathematically legible, not to suggest that the paper resolves the harder theory of extremal-index estimation.
+Taken together, the results in this subsection make a limited theoretical point. The three elementary propositions record ordering, benchmark, and monotonicity properties at the finite-threshold level, and the plug-in lemma transfers consistency from established ingredients to the proposed functional. Their role is to keep the object mathematically legible, not to suggest that the paper resolves the harder theory of extremal-index estimation.
 
 \begin{proposition}[Finite-sample perturbation bound]
-Let $p>0$ and $\theta>0$, and let $\widetilde{p}$ and $\widetilde{\theta}$ be estimators such that
+Let $p>0$ and $\theta>0$, and let $\bar{p}$ and $\bar{\theta}$ be estimators such that
 \[
-|\widetilde{p}-p|\le \varepsilon_p,
+|\bar{p}-p|\le \varepsilon_p,
 \qquad
-|\widetilde{\theta}-\theta|\le \varepsilon_\theta<\theta.
+|\bar{\theta}-\theta|\le \varepsilon_\theta<\theta.
 \]
 Then
 \[
-\left|\frac{\widetilde{p}}{\widetilde{\theta}}-\frac{p}{\theta}\right|
+\left|\frac{\bar{p}}{\bar{\theta}}-\frac{p}{\theta}\right|
 \le
 \frac{\varepsilon_p}{\theta-\varepsilon_\theta}
 +\frac{p\,\varepsilon_\theta}{\theta(\theta-\varepsilon_\theta)}.
@@ -343,13 +355,13 @@ Then
 \textit{Proof sketch.}
 Write
 \[
-\frac{\widetilde{p}}{\widetilde{\theta}}-\frac{p}{\theta}
+\frac{\bar{p}}{\bar{\theta}}-\frac{p}{\theta}
 =
-\frac{\theta(\widetilde{p}-p)+p(\theta-\widetilde{\theta})}{\theta\widetilde{\theta}}.
+\frac{\theta(\bar{p}-p)+p(\theta-\bar{\theta})}{\theta\bar{\theta}}.
 \]
-Taking absolute values and using $\widetilde{\theta}\ge \theta-\varepsilon_\theta>0$ gives
+Taking absolute values and using $\bar{\theta}\ge \theta-\varepsilon_\theta>0$ gives
 \[
-\left|\frac{\widetilde{p}}{\widetilde{\theta}}-\frac{p}{\theta}\right|
+\left|\frac{\bar{p}}{\bar{\theta}}-\frac{p}{\theta}\right|
 \le
 \frac{\theta\varepsilon_p+p\varepsilon_\theta}{\theta(\theta-\varepsilon_\theta)},
 \]
